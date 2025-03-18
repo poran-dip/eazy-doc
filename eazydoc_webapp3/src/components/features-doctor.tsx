@@ -1,4 +1,5 @@
 import Image from "next/image"
+import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -37,21 +38,20 @@ export default function FeaturedDoctors() {
       image: "/placeholder.svg?height=400&width=400",
     },
     {
-        id: 4,
-        name: "Dr. Debosmita Roy",
-        specialty: "dentist",
-        rating: 4.8,
-        reviews: 87,
-        location: "Guwahati, Assam",
-        availability: "Available in 2 days",
-        image: "",
-
+      id: 4,
+      name: "Dr. Debosmita Roy",
+      specialty: "Dentist",
+      rating: 4.9,
+      reviews: 87,
+      location: "Boston, MA",
+      availability: "Available in 2 days",
+      image: "/placeholder.svg?height=400&width=400",
     },
   ]
 
   return (
     <section className="py-12 md:py-16">
-      <div className="container px-4 md:px-6">
+      <div className="container px-4 md:px-6 w-full mx-auto">
         <div className="flex flex-col items-center space-y-4 text-center mb-10">
           <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">Featured Doctors</h2>
           <p className="mx-auto max-w-[700px] text-muted-foreground md:text-lg">
@@ -99,7 +99,9 @@ export default function FeaturedDoctors() {
                 </Badge>
               </CardContent>
               <CardFooter className="p-4 pt-0">
-                <Button className="w-full">Book Appointment</Button>
+                <Button className="w-full" asChild>
+                  <Link href={`/appointment/${doctor.id}`}>Book Appointment</Link>
+                </Button>
               </CardFooter>
             </Card>
           ))}
