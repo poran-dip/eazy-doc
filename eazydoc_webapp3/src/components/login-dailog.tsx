@@ -24,6 +24,58 @@ interface LoginDialogProps {
 
 export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
   const [activeTab, setActiveTab] = useState("login")
+  const [registerData, setRegisterData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  })
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setRegisterData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setIsLoading(true)
+
+    if (registerData.password !== registerData.confirmPassword) {
+      setError('Passwords do not match')
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      const response = await fetch('/api/user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: registerData.name,
+          email: registerData.email,
+          password: registerData.password
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.message || 'An error occurred. Please try again.')
+      } else {
+        setActiveTab('login')
+      }
+    } catch (error) {
+      setError('An error occurred. Please try again.')
+      console.error('Registration error:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -119,42 +171,73 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
                 Fill in the information below to create your account.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-3 sm:gap-4 py-3 sm:py-4">
-              <div className="grid gap-1 sm:gap-2">
-                <Label htmlFor="name" className="text-xs sm:text-sm">
-                  Full Name
-                </Label>
-                <Input id="name" placeholder="John Doe" className="text-xs sm:text-sm h-8 sm:h-10" />
+            <form onSubmit={handleRegisterSubmit}>
+              <div className="grid gap-3 sm:gap-4 py-3 sm:py-4">
+                <div className="grid gap-1 sm:gap-2">
+                  <Label htmlFor="name" className="text-xs sm:text-sm">
+                    Full Name
+                  </Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    placeholder="John Doe"
+                    value={registerData.name}
+                    onChange={handleRegisterChange}
+                    className="text-xs sm:text-sm h-8 sm:h-10"
+                  />
+                </div>
+                <div className="grid gap-1 sm:gap-2">
+                  <Label htmlFor="register-email" className="text-xs sm:text-sm">
+                    Email
+                  </Label>
+                  <Input
+                    id="register-email"
+                    name="email"
+                    type="email"
+                    placeholder="name@example.com"
+                    value={registerData.email}
+                    onChange={handleRegisterChange}
+                    className="text-xs sm:text-sm h-8 sm:h-10"
+                  />
+                </div>
+                <div className="grid gap-1 sm:gap-2">
+                  <Label htmlFor="register-password" className="text-xs sm:text-sm">
+                    Password
+                  </Label>
+                  <Input
+                    id="register-password"
+                    name="password"
+                    type="password"
+                    value={registerData.password}
+                    onChange={handleRegisterChange}
+                    className="text-xs sm:text-sm h-8 sm:h-10"
+                  />
+                </div>
+                <div className="grid gap-1 sm:gap-2">
+                  <Label htmlFor="confirm-password" className="text-xs sm:text-sm">
+                    Confirm Password
+                  </Label>
+                  <Input
+                    id="confirm-password"
+                    name="confirmPassword"
+                    type="password"
+                    value={registerData.confirmPassword}
+                    onChange={handleRegisterChange}
+                    className="text-xs sm:text-sm h-8 sm:h-10"
+                  />
+                </div>
+                {error && (
+                  <div className="text-red-500 text-xs sm:text-sm mt-2">
+                    {error}
+                  </div>
+                )}
               </div>
-              <div className="grid gap-1 sm:gap-2">
-                <Label htmlFor="register-email" className="text-xs sm:text-sm">
-                  Email
-                </Label>
-                <Input
-                  id="register-email"
-                  type="email"
-                  placeholder="name@example.com"
-                  className="text-xs sm:text-sm h-8 sm:h-10"
-                />
-              </div>
-              <div className="grid gap-1 sm:gap-2">
-                <Label htmlFor="register-password" className="text-xs sm:text-sm">
-                  Password
-                </Label>
-                <Input id="register-password" type="password" className="text-xs sm:text-sm h-8 sm:h-10" />
-              </div>
-              <div className="grid gap-1 sm:gap-2">
-                <Label htmlFor="confirm-password" className="text-xs sm:text-sm">
-                  Confirm Password
-                </Label>
-                <Input id="confirm-password" type="password" className="text-xs sm:text-sm h-8 sm:h-10" />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" className="w-full text-xs sm:text-sm h-8 sm:h-10">
-                Create Account
-              </Button>
-            </DialogFooter>
+              <DialogFooter>
+                <Button type="submit" className="w-full text-xs sm:text-sm h-8 sm:h-10" disabled={isLoading}>
+                  {isLoading ? 'Loading...' : 'Create Account'}
+                </Button>
+              </DialogFooter>
+            </form>
 
             <div className="relative my-3 sm:my-4">
               <div className="absolute inset-0 flex items-center">
@@ -199,4 +282,3 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
     </Dialog>
   )
 }
-
