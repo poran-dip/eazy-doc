@@ -39,9 +39,9 @@ export default function FeaturedDoctors() {
     },
     {
       id: 4,
-      name: "Dr. Debosmita Roy",
-      specialty: "Dentist",
-      rating: 4.9,
+      name: "Dr. James Wilson",
+      specialty: "Orthopedics",
+      rating: 4.7,
       reviews: 87,
       location: "Boston, MA",
       availability: "Available in 2 days",
@@ -50,17 +50,17 @@ export default function FeaturedDoctors() {
   ]
 
   return (
-    <section className="py-12 md:py-16">
-      <div className="container px-4 md:px-6 w-full mx-auto">
+    <section className="py-16 md:py-20 bg-white">
+      <div className="container px-4 md:px-6 max-w-6xl mx-auto">
         <div className="flex flex-col items-center space-y-4 text-center mb-10">
-          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">Featured Doctors</h2>
+          <h2 className="text-3xl font-bold tracking-tighter">Featured Doctors</h2>
           <p className="mx-auto max-w-[700px] text-muted-foreground md:text-lg">
             Our top-rated healthcare professionals ready to provide the care you need.
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {doctors.map((doctor) => (
-            <Card key={doctor.id} className="overflow-hidden">
+            <Card key={doctor.id} className="overflow-hidden border shadow-sm">
               <div className="aspect-square relative">
                 <Image src={doctor.image || "/placeholder.svg"} alt={doctor.name} fill className="object-cover" />
               </div>
@@ -99,7 +99,7 @@ export default function FeaturedDoctors() {
                 </Badge>
               </CardContent>
               <CardFooter className="p-4 pt-0">
-                <Button className="w-full" asChild>
+                <Button className="w-full bg-black text-white hover:bg-gray-800" asChild>
                   <Link href={`/appointment/${doctor.id}`}>Book Appointment</Link>
                 </Button>
               </CardFooter>

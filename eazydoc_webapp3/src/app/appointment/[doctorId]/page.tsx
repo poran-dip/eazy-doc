@@ -287,36 +287,61 @@ export default function AppointmentPage({ params }: { params: { doctorId: string
   }
 
   return (
-    <div className="container w-2/3 mx-auto h-full py-10">
+    <div className="container py-10 mx-auto h-fit-content max-w-6xl">
       <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Book Your Appointment</CardTitle>
-          <CardDescription>Please fill out the form below to schedule your appointment.</CardDescription>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-xl sm:text-2xl">Book Your Appointment</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
+            Please fill out the form below to schedule your appointment.
+          </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Personal Information</h3>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input id="firstName" name="firstName" value={formData.firstName} onChange={handleChange} required />
+          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+            <div className="space-y-3 sm:space-y-4">
+              <h3 className="text-base sm:text-lg font-medium">Personal Information</h3>
+              <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
+                <div className="space-y-1 sm:space-y-2">
+                  <Label htmlFor="firstName" className="text-xs sm:text-sm">
+                    First Name
+                  </Label>
+                  <Input
+                    id="firstName"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    required
+                    className="text-xs sm:text-sm h-8 sm:h-10"
+                  />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input id="lastName" name="lastName" value={formData.lastName} onChange={handleChange} required />
+                <div className="space-y-1 sm:space-y-2">
+                  <Label htmlFor="lastName" className="text-xs sm:text-sm">
+                    Last Name
+                  </Label>
+                  <Input
+                    id="lastName"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    required
+                    className="text-xs sm:text-sm h-8 sm:h-10"
+                  />
                 </div>
               </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="dob">Date of Birth</Label>
+              <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
+                <div className="space-y-1 sm:space-y-2">
+                  <Label htmlFor="dob" className="text-xs sm:text-sm">
+                    Date of Birth
+                  </Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant={"outline"}
-                        className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
+                        className={cn(
+                          "w-full justify-start text-left font-normal text-xs sm:text-sm h-8 sm:h-10",
+                          !date && "text-muted-foreground",
+                        )}
                       >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        <CalendarIcon className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                         {date ? format(date, "PPP") : "Select your date of birth"}
                       </Button>
                     </PopoverTrigger>
@@ -331,43 +356,68 @@ export default function AppointmentPage({ params }: { params: { doctorId: string
                     </PopoverContent>
                   </Popover>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Contact Number</Label>
-                  <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} required />
+                <div className="space-y-1 sm:space-y-2">
+                  <Label htmlFor="phone" className="text-xs sm:text-sm">
+                    Contact Number
+                  </Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    required
+                    className="text-xs sm:text-sm h-8 sm:h-10"
+                  />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} required />
+              <div className="space-y-1 sm:space-y-2">
+                <Label htmlFor="email" className="text-xs sm:text-sm">
+                  Email Address
+                </Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className="text-xs sm:text-sm h-8 sm:h-10"
+                />
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Medical Information</h3>
-              <div className="space-y-2">
-                <Label htmlFor="medicalHistory">Medical History (allergies, conditions, medications)</Label>
+            <div className="space-y-3 sm:space-y-4">
+              <h3 className="text-base sm:text-lg font-medium">Medical Information</h3>
+              <div className="space-y-1 sm:space-y-2">
+                <Label htmlFor="medicalHistory" className="text-xs sm:text-sm">
+                  Medical History (allergies, conditions, medications)
+                </Label>
                 <Textarea
                   id="medicalHistory"
                   name="medicalHistory"
                   value={formData.medicalHistory}
                   onChange={handleChange}
                   placeholder="Please share any relevant medical information that might be important for your doctor to know."
-                  className="min-h-[120px]"
+                  className="min-h-[80px] sm:min-h-[120px] text-xs sm:text-sm"
                 />
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Appointment Date</h3>
-              <div className="space-y-2">
-                <Label>Select Preferred Date</Label>
+            <div className="space-y-3 sm:space-y-4">
+              <h3 className="text-base sm:text-lg font-medium">Appointment Date</h3>
+              <div className="space-y-1 sm:space-y-2">
+                <Label className="text-xs sm:text-sm">Select Preferred Date</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant={"outline"}
-                      className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
+                      className={cn(
+                        "w-full justify-start text-left font-normal text-xs sm:text-sm h-8 sm:h-10",
+                        !date && "text-muted-foreground",
+                      )}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      <CalendarIcon className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                       {date ? format(date, "PPP") : "Select appointment date"}
                     </Button>
                   </PopoverTrigger>
@@ -388,13 +438,11 @@ export default function AppointmentPage({ params }: { params: { doctorId: string
               </div>
             </div>
           </CardContent>
-          <div className="py-4">
-            <CardFooter>
-              <Button type="submit" className="w-full" disabled={isSubmitting || !date}>
-                {isSubmitting ? "Processing..." : "Book Appointment"}
-              </Button>
-            </CardFooter>
-          </div>
+          <CardFooter className="p-4 sm:p-6">
+            <Button type="submit" className="w-full text-xs sm:text-sm h-8 sm:h-10" disabled={isSubmitting || !date}>
+              {isSubmitting ? "Processing..." : "Book Appointment"}
+            </Button>
+          </CardFooter>
         </form>
       </Card>
     </div>

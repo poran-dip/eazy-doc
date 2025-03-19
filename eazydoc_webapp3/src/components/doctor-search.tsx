@@ -68,17 +68,17 @@ export default function DoctorSearch() {
   }
 
   return (
-    <div className="space-y-auto w-full h-auto max-w-4xl mx-auto">
-      <Card className="shadow-lg">
-        <CardContent className="p-6"> 
-          <form onSubmit={handleSearch} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="specialty" className="text-sm font-medium">
+    <div className="w-full max-w-4xl mx-auto">
+      <Card className="shadow-sm bg-white">
+        <CardContent className="p-6">
+          <form onSubmit={handleSearch} className="space-y-0">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+              <div className="md:col-span-5">
+                <label htmlFor="specialty" className="text-sm font-medium block mb-2">
                   Specialty
                 </label>
                 <Select value={specialty} onValueChange={setSpecialty}>
-                  <SelectTrigger id="specialty">
+                  <SelectTrigger id="specialty" className="w-full">
                     <SelectValue placeholder="Select specialty" />
                   </SelectTrigger>
                   <SelectContent>
@@ -92,23 +92,23 @@ export default function DoctorSearch() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2 md:col-span-2">
-                <label htmlFor="location" className="text-sm font-medium">
+              <div className="md:col-span-5">
+                <label htmlFor="location" className="text-sm font-medium block mb-2">
                   Location
                 </label>
-                <div className="flex space-x-2">
-                  <Input
-                    id="location"
-                    placeholder="City, State or Zip Code"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button type="submit" className="flex-shrink-0" disabled={isSearching}>
-                    <Search className="h-4 w-4 mr-2" />
-                    {isSearching ? "Searching..." : "Search"}
-                  </Button>
-                </div>
+                <Input
+                  id="location"
+                  placeholder="City, State or Zip Code"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <div className="md:col-span-2 flex items-end">
+                <Button type="submit" className="w-full bg-black text-white hover:bg-gray-800" disabled={isSearching}>
+                  <Search className="h-4 w-4 mr-2" />
+                  {isSearching ? "Searching..." : "Search"}
+                </Button>
               </div>
             </div>
           </form>
@@ -116,7 +116,7 @@ export default function DoctorSearch() {
       </Card>
 
       {searchResults.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-4 mt-8">
           <h3 className="text-xl font-semibold">Search Results</h3>
           <div className="space-y-4">
             {searchResults.map((doctor) => (
@@ -174,7 +174,7 @@ export default function DoctorSearch() {
                       </div>
                     </div>
                     <div className="flex items-center sm:flex-col sm:items-end gap-2 mt-4 sm:mt-0">
-                      <Button asChild>
+                      <Button asChild className="bg-black text-white hover:bg-gray-800">
                         <Link href={`/appointment/${doctor.id}`}>Book Appointment</Link>
                       </Button>
                       <Button variant="outline" asChild>
