@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { signIn } from "next-auth/react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -77,6 +78,79 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
     }
   }
 
+  const [loginData, setLoginData] = useState({
+    email: '',
+    password: ''
+  })
+
+  const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setLoginData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setIsLoading(true)
+
+    try {
+      // First validate credentials with our custom API
+      const response = await fetch('/api/auth/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: loginData.email,
+          password: loginData.password
+        })
+      });
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        setError(data.message || 'Login failed');
+        return;
+      }
+
+      // Use NextAuth signIn after successful validation
+      const result = await signIn('credentials', {
+          redirect: false,
+          email: loginData.email,
+          password: loginData.password,
+      });
+
+      if (result?.error) {
+          setError('Invalid credentials');
+      } else {
+          onOpenChange(false); // Close the dialog
+          window.location.href = '/dashboard'; // Redirect to dashboard
+      }
+  } catch (error) {
+      setError('An error occurred. Please try again.');
+      console.error('Login error:', error);
+  } finally {
+      setIsLoading(false);
+  }
+    
+  }
+
+  const handleGoogleSigin = async () => {
+    setIsLoading(true);
+    try{
+      const result = await signIn("google",{
+        callbackUrl: "",
+        redirect: true
+      });
+    }catch{
+      setError("Failed to sign in with Google");
+      console.error("Failed to sign in with Google");
+    }
+    finally{
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] p-4 sm:p-6 max-w-[90vw]">
@@ -96,36 +170,55 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
                 Enter your email and password to access your account.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-3 sm:gap-4 py-3 sm:py-4">
-              <div className="grid gap-1 sm:gap-2">
-                <Label htmlFor="email" className="text-xs sm:text-sm">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  className="text-xs sm:text-sm h-8 sm:h-10"
-                />
-              </div>
-              <div className="grid gap-1 sm:gap-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-xs sm:text-sm">
-                    Password
+            <form onSubmit={handleLoginSubmit}>
+              <div className="grid gap-3 sm:gap-4 py-3 sm:py-4">
+                <div className="grid gap-1 sm:gap-2">
+                  <Label htmlFor="email" className="text-xs sm:text-sm">
+                    Email
                   </Label>
-                  <Link href="#" className="text-xs sm:text-sm text-primary hover:underline">
-                    Forgot password?
-                  </Link>
+                  <Input
+                    id="email"
+                    type="email"
+                    name="email"
+                    placeholder="name@example.com"
+                    className="text-xs sm:text-sm h-8 sm:h-10"
+                    onChange={handleLoginChange}
+                    value={loginData.email}
+                  />
                 </div>
-                <Input id="password" type="password" className="text-xs sm:text-sm h-8 sm:h-10" />
+                <div className="grid gap-1 sm:gap-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password" className="text-xs sm:text-sm">
+                      Password
+                    </Label>
+                    <Link href="#" className="text-xs sm:text-sm text-primary hover:underline">
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <Input 
+                  id="password" 
+                  type="password"
+                  name="password" 
+                  className="text-xs sm:text-sm h-8 sm:h-10"
+                  value={loginData.password}
+                  onChange={handleLoginChange}
+                  />
+                </div>
+                {error && (
+                  <div className="text-red-500 text-xs sm:text-sm mt-2">
+                    {error}
+                  </div>
+                )}
               </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" className="w-full text-xs sm:text-sm h-8 sm:h-10">
-                Login
-              </Button>
-            </DialogFooter>
-
+              <DialogFooter>
+                <Button 
+                type="submit" 
+                className="w-full text-xs sm:text-sm h-8 sm:h-10"
+                disabled={isLoading}>
+                  {isLoading ? 'Loading...' : 'Login'}
+                </Button>
+              </DialogFooter>
+            </form>
             <div className="relative my-3 sm:my-4">
               <div className="absolute inset-0 flex items-center">
                 <Separator className="w-full" />
@@ -135,7 +228,12 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
               </div>
             </div>
 
-            <Button variant="outline" className="w-full text-xs sm:text-sm h-8 sm:h-10" type="button">
+            <Button 
+            variant="outline" 
+            className="w-full text-xs sm:text-sm h-8 sm:h-10" 
+            type="button" 
+            onClick={handleGoogleSigin} 
+            disabled={isLoading}>
               <svg viewBox="0 0 24 24" className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" aria-hidden="true">
                 <path
                   d="M12.0003 4.75C13.7703 4.75 15.3553 5.36002 16.6053 6.54998L20.0303 3.125C17.9502 1.19 15.2353 0 12.0003 0C7.31028 0 3.25527 2.69 1.28027 6.60998L5.27028 9.70498C6.21525 6.86002 8.87028 4.75 12.0003 4.75Z"
@@ -154,7 +252,7 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
                   fill="#34A853"
                 />
               </svg>
-              Sign in with Google
+              {isLoading ? 'Loading...' : 'Sign in with Google'}
             </Button>
 
             <div className="mt-3 sm:mt-4 text-center text-xs sm:text-sm">
@@ -248,7 +346,9 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
               </div>
             </div>
 
-            <Button variant="outline" className="w-full text-xs sm:text-sm h-8 sm:h-10" type="button">
+            <Button variant="outline" className="w-full text-xs sm:text-sm h-8 sm:h-10" type="button"
+            onClick={handleGoogleSigin} 
+            disabled={isLoading}>
               <svg viewBox="0 0 24 24" className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" aria-hidden="true">
                 <path
                   d="M12.0003 4.75C13.7703 4.75 15.3553 5.36002 16.6053 6.54998L20.0303 3.125C17.9502 1.19 15.2353 0 12.0003 0C7.31028 0 3.25527 2.69 1.28027 6.60998L5.27028 9.70498C6.21525 6.86002 8.87028 4.75 12.0003 4.75Z"
@@ -267,7 +367,7 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
                   fill="#34A853"
                 />
               </svg>
-              Sign up with Google
+              {isLoading ? 'Loading...' : 'Sign up with Google'}
             </Button>
 
             <div className="mt-3 sm:mt-4 text-center text-xs sm:text-sm">

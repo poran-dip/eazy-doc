@@ -1,9 +1,9 @@
-
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { BackgroundBeams } from "@/components/ui/background-beams";
 import { AuroraBackground } from "@/components/ui/aurora_background";
+import AuthProvider from "@/components/providers/session-provider";
 
 const inter = Inter();
 
@@ -19,14 +19,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
-        <div>
+      <body className={inter.className}>
           <div>
-            {children}
+            <div>
+              {children}
+            </div>
           </div>
-        </div>
       </body>
     </html>
-
   );
 }
