@@ -89,6 +89,7 @@ model Appointment {
   prescriptions       String[]
   tests               String[]
   relatedAppointments Appointment[] @relation("RelatedAppointments")
+  relatedTo           Appointment[] @relation("RelatedAppointments")
 }
 
 enum Status {
