@@ -42,7 +42,6 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-<<<<<<< HEAD
 next-env.d.ts
 
 # optional caches and build files
@@ -62,6 +61,3 @@ dist/
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-=======
-next-env.d.ts
->>>>>>> 4159dfc (readded lmao)
