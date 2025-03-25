@@ -16,6 +16,7 @@ export default function Navbar() {
       <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center text-lg font-semibold">
+            <img src="/logo.png" alt="Eazydoc Logo" className="h-8 w-auto mr-2 object-contain" />
             <span className="font-bold">Eazydoc</span>
           </Link>
         </div>
@@ -29,45 +30,39 @@ export default function Navbar() {
             </SheetTrigger>
             <SheetContent side="left" className="pr-0">
               <nav className="grid gap-6 text-lg font-medium">
-                <Link href="/" className="hover:text-foreground/80">
-                  Home
+                <Link href="/features" className="hover:text-foreground/80">
+                  Features
                 </Link>
-                <Link href="#" className="hover:text-foreground/80">
-                  Services
-                </Link>
-                <Link href="#" className="hover:text-foreground/80">
-                  Specialties
-                </Link>
-                <Link href="#" className="hover:text-foreground/80">
+                <Link href="/about" className="hover:text-foreground/80">
                   About Us
                 </Link>
-                <Link href="#" className="hover:text-foreground/80">
-                  Contact
-                </Link>
                 <Link href="/docs" className="hover:text-foreground/80">
-                  Eazydoc for Docs
+                  For Doctors
+                </Link>
+                <Link href="/ambulances" className="hover:text-foreground/80">
+                  For Ambulances
+                </Link>
+                <Link href="/admin" className="hover:text-foreground/80">
+                  For Admins
                 </Link>
               </nav>
             </SheetContent>
           </Sheet>
-          <nav className="hidden md:flex gap-8 ml-4">
-            <Link href="/" className="text-sm font-medium hover:text-foreground/80">
-              Home
+          <nav className="hidden md:flex gap-10 ml-4">
+            <Link href="/features" className="text-sm font-medium hover:text-foreground/80">
+              Features
             </Link>
-            <Link href="#" className="text-sm font-medium hover:text-foreground/80">
-              Services
-            </Link>
-            <Link href="#" className="text-sm font-medium hover:text-foreground/80">
-              Specialties
-            </Link>
-            <Link href="#" className="text-sm font-medium hover:text-foreground/80">
+            <Link href="/about" className="text-sm font-medium hover:text-foreground/80">
               About Us
             </Link>
-            <Link href="#" className="text-sm font-medium hover:text-foreground/80">
-              Contact
-            </Link>
             <Link href="/docs" className="text-sm font-medium hover:text-foreground/80">
-              Eazydoc for Docs
+              For Doctors
+            </Link>
+            <Link href="/ambulances" className="text-sm font-medium hover:text-foreground/80">
+              For Ambulances
+            </Link>
+            <Link href="/admin" className="text-sm font-medium hover:text-foreground/80">
+              For Admins
             </Link>
           </nav>
         </div>

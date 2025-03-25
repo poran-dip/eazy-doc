@@ -26,9 +26,12 @@ export default function Home() {
       </main>
       <footer className="border-t py-6 md:py-8">
         <div className="container px-4 md:px-6">
-          <div className="flex flex-col items-center justify-center gap-4 md:flex-row md:gap-6">
+          <div className="flex flex-col items-center justify-center gap-4 md:flex-col md:gap-6">
             <p className="text-center text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Doctor Finder. All rights reserved.
+              © {new Date().getFullYear()} Cosmic Titans. All Rights Reserved.
+            </p>
+            <p className="text-center text-sm text-muted-foreground">
+              Eazydoc™ – A Project By Cosmic Titans. 
             </p>
           </div>
         </div>
