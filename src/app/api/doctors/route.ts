@@ -1,87 +1,104 @@
-// app/api/doctors/route.ts (GET all doctors, POST new doctor)
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
-import { Prisma } from '@prisma/client';
+// app/api/doctors/route.ts
+import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
+import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient();
+// Simplified Validation Schema
+const DoctorCreateSchema = z.object({
+  email: z.string().email(),
+  password: z.string(),
+  name: z.string(),
+  specialization: z.string(),
+  license: z.string().optional()
+})
 
-// GET all doctors
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const doctors = await prisma.doctor.findMany({
-      include: {
+      include: { 
+        user: true,
         appointments: {
           include: {
             patient: {
-              select: {
-                id: true,
-                name: true,
-              }
+              include: { user: true }
             }
-          }
-        }
+          },
+          orderBy: { dateTime: 'desc' }
+        },
+        ratings: true
       }
-    });
-    
-    return NextResponse.json(doctors);
+    })
+
+    return NextResponse.json(doctors)
   } catch (error) {
-    console.error('Error fetching doctors:', error);
-    return NextResponse.json(
-      { message: 'Failed to fetch doctors' },
-      { status: 500 }
-    );
+    console.error('Doctors fetch error:', error)
+    return NextResponse.json({ 
+      error: 'Failed to fetch doctors',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 
-// POST new doctor
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { name, email, password, specialization } = body;
-    
-    // Validate required fields
-    if (!name || !email || !password || !specialization) {
-      return NextResponse.json(
-        { message: 'Missing required fields' },
-        { status: 400 }
-      );
+    const rawData = await request.json()
+    const validatedData = DoctorCreateSchema.parse(rawData)
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email: validatedData.email }
+    })
+
+    if (existingUser) {
+      return NextResponse.json({ 
+        error: 'Email already exists',
+        field: 'email'
+      }, { status: 409 })
     }
-    
-    // Check if doctor with email already exists
-    const existingDoctor = await prisma.doctor.findUnique({
-      where: { email }
-    });
-    
-    if (existingDoctor) {
-      return NextResponse.json(
-        { message: 'Doctor with this email already exists' },
-        { status: 409 }
-      );
-    }
-    
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Create new doctor
-    const newDoctor = await prisma.doctor.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        specialization,
-      }
-    });
-    
-    // Exclude password from response
-    const { password: _, ...doctorWithoutPassword } = newDoctor;
-    
-    return NextResponse.json(doctorWithoutPassword, { status: 201 });
+
+    const hashedPassword = await bcrypt.hash(validatedData.password, 12)
+
+    const doctor = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: validatedData.email,
+          password: hashedPassword,
+          name: validatedData.name,
+          role: 'DOCTOR'
+        }
+      })
+
+      return tx.doctor.create({
+        data: {
+          userId: user.id,
+          specialization: validatedData.specialization,
+          license: validatedData.license,
+          verified: false
+        },
+        include: { 
+          user: true,
+          appointments: true,
+          ratings: true
+        }
+      })
+    })
+
+    return NextResponse.json(doctor, { status: 201 })
   } catch (error) {
-    console.error('Error creating doctor:', error);
-    return NextResponse.json(
-      { message: 'Failed to create doctor' },
-      { status: 500 }
-    );
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({
+        error: 'Validation failed',
+        details: error.errors.map(e => ({
+          path: e.path.join('.'),
+          message: e.message
+        }))
+      }, { status: 400 })
+    }
+
+    console.error('Doctor creation error:', error)
+    return NextResponse.json({ 
+      error: 'Failed to create doctor',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }

@@ -47,15 +47,13 @@ import { toast } from "sonner";
 // Define types based on Prisma schema
 interface Doctor {
   id: string;
-  name: string;
-  email: string;
+  user: any;
   specialization: string;
 }
 
 interface Patient {
   id: string;
-  name: string;
-  email: string;
+  user: any;
   age?: number | null;
   gender?: string | null;
 }
@@ -169,8 +167,8 @@ const AdminAppointments: React.FC = () => {
     if (searchTerm.trim() !== '') {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(appointment => 
-        appointment.patient?.name?.toLowerCase().includes(term) ||
-        appointment.doctor?.name?.toLowerCase().includes(term) ||
+        appointment.patient?.user.name?.toLowerCase().includes(term) ||
+        appointment.doctor?.user.name?.toLowerCase().includes(term) ||
         appointment.condition?.toLowerCase().includes(term) ||
         appointment.specialization?.toLowerCase().includes(term)
       );
@@ -468,8 +466,8 @@ const AdminAppointments: React.FC = () => {
             ) : (
               filteredAppointments.map((appointment) => (
                 <TableRow key={appointment.id}>
-                  <TableCell className="font-medium">{appointment.patient?.name || 'Unknown'}</TableCell>
-                  <TableCell>{appointment.doctor?.name || 'Not Assigned'}</TableCell>
+                  <TableCell className="font-medium">{appointment.patient?.user?.name || 'Unknown'}</TableCell>
+                  <TableCell>{appointment.doctor?.user?.name || 'Not Assigned'}</TableCell>
                   <TableCell>
                     {appointment.dateTime 
                       ? format(new Date(appointment.dateTime), 'MMM d, yyyy h:mm a') 
@@ -535,7 +533,7 @@ const AdminAppointments: React.FC = () => {
                   <SelectContent>
                     {patients.map(patient => (
                       <SelectItem key={patient.id} value={patient.id}>
-                        {patient.name}
+                        {patient.user.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -562,7 +560,7 @@ const AdminAppointments: React.FC = () => {
                     <SelectItem value="none">None</SelectItem>
                     {doctors.map(doctor => (
                       <SelectItem key={doctor.id} value={doctor.id}>
-                        {doctor.name} - {doctor.specialization}
+                        {doctor.user.name} - {doctor.specialization}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -737,7 +735,7 @@ const AdminAppointments: React.FC = () => {
                   <SelectContent>
                     {patients.map(patient => (
                       <SelectItem key={patient.id} value={patient.id}>
-                        {patient.name}
+                        {patient.user.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -762,7 +760,7 @@ const AdminAppointments: React.FC = () => {
                     <SelectItem value="none">None</SelectItem>
                     {doctors.map(doctor => (
                       <SelectItem key={doctor.id} value={doctor.id}>
-                        {doctor.name} - {doctor.specialization}
+                        {doctor.user.name} - {doctor.specialization}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -915,7 +913,7 @@ const AdminAppointments: React.FC = () => {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the appointment 
-              {currentAppointment && ` for ${currentAppointment.patient?.name}`}.
+              {currentAppointment && ` for ${currentAppointment.patient?.user.name}`}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

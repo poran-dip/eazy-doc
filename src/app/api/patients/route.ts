@@ -1,87 +1,101 @@
-// File: /app/api/patients/route.ts
-import { PrismaClient } from '@prisma/client';
-import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
+// app/api/patients/route.ts
+import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
+import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient();
+// Simplified Validation Schema
+const PatientCreateSchema = z.object({
+  email: z.string().email(),
+  password: z.string(),
+  name: z.string(),
+  age: z.number().int().optional(),
+  gender: z.string().optional()
+})
 
-// GET - Fetch all patients
-export async function GET(req: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const patients = await prisma.patient.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        age: true,
-        gender: true,
-        // Exclude password for security
+      include: { 
+        user: true,
+        appointments: {
+          include: {
+            doctor: {
+              include: { user: true }
+            }
+          },
+          orderBy: { dateTime: 'desc' }
+        }
       }
-    });
-    
-    return NextResponse.json(patients);
+    })
+
+    return NextResponse.json(patients)
   } catch (error) {
-    console.error('Error fetching patients:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch patients' },
-      { status: 500 }
-    );
+    console.error('Patients fetch error:', error)
+    return NextResponse.json({ 
+      error: 'Failed to fetch patients',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 
-// POST - Create a new patient
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
-    
-    // Basic validation 
-    if (!body.name || !body.email || !body.password) {
-      return NextResponse.json(
-        { error: 'Name, email, and password are required' },
-        { status: 400 }
-      );
+    const rawData = await request.json()
+    const validatedData = PatientCreateSchema.parse(rawData)
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email: validatedData.email }
+    })
+
+    if (existingUser) {
+      return NextResponse.json({ 
+        error: 'Email already exists',
+        field: 'email'
+      }, { status: 409 })
     }
-    
-    // Check if email already exists
-    const existingPatient = await prisma.patient.findUnique({
-      where: { email: body.email }
-    });
-    
-    if (existingPatient) {
-      return NextResponse.json(
-        { error: 'Email already in use' },
-        { status: 409 }
-      );
-    }
-    
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(body.password, 10);
-    
-    // Create the patient
-    const newPatient = await prisma.patient.create({
-      data: {
-        name: body.name,
-        email: body.email,
-        password: hashedPassword,
-        age: body.age || null,
-        gender: body.gender || null,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        age: true,
-        gender: true,
-        // Exclude password
-      }
-    });
-    
-    return NextResponse.json(newPatient, { status: 201 });
+
+    const hashedPassword = await bcrypt.hash(validatedData.password, 12)
+
+    const patient = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: validatedData.email,
+          password: hashedPassword,
+          name: validatedData.name,
+          role: 'PATIENT'
+        }
+      })
+
+      return tx.patient.create({
+        data: {
+          userId: user.id,
+          age: validatedData.age,
+          gender: validatedData.gender
+        },
+        include: { 
+          user: true,
+          appointments: true
+        }
+      })
+    })
+
+    return NextResponse.json(patient, { status: 201 })
   } catch (error) {
-    console.error('Error creating patient:', error);
-    return NextResponse.json(
-      { error: 'Failed to create patient' },
-      { status: 500 }
-    );
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({
+        error: 'Validation failed',
+        details: error.errors.map(e => ({
+          path: e.path.join('.'),
+          message: e.message
+        }))
+      }, { status: 400 })
+    }
+
+    console.error('Patient creation error:', error)
+    return NextResponse.json({ 
+      error: 'Failed to create patient',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }

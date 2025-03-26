@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Home, Calendar, Activity, Settings, LogOut, AlertCircle, ArrowLeft, Menu } from 'lucide-react';
-import Link from "next/link"
+import { Home, Calendar, Activity, Settings, LogOut, Menu } from 'lucide-react';
 
 // Custom components
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { toast } from 'sonner';
 
 // Doc components
 import DocHome from '@/components/doc/home';
@@ -18,29 +18,72 @@ import DocAppointments from '@/components/doc/appointments';
 import DocStatus from '@/components/doc/status';
 import DocSettings from '@/components/doc/settings';
 
+// API utility for type-safe fetching
+async function fetchWithAuth(url: string, options: RequestInit = {}) {
+  const token = localStorage.getItem('token');
+  const headers = {
+    ...options.headers,
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  };
+
+  const response = await fetch(url, { ...options, headers });
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'An error occurred');
+  }
+
+  return response.json();
+}
+
 const IntegratedDashboard = () => {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [doctorId, setDoctorId] = useState('');
   const [doctorName, setDoctorName] = useState('');
+  const [doctorDetails, setDoctorDetails] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('home');
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch doctor details
+  const fetchDoctorDetails = async (doctorId: string) => {
+    try {
+      const doctorData = await fetchWithAuth(`/api/doctors/${doctorId}`);
+      setDoctorDetails(doctorData);
+      setDoctorName(doctorData.user.name);
+    } catch (error) {
+      console.error('Failed to fetch doctor details:', error);
+      toast.error('Error', {
+        description: 'Failed to load doctor details',
+      });
+    }
+  };
+
   // Check if logged in from localStorage on component mount
   useEffect(() => {
     const checkAuth = () => {
       const storedIsLoggedIn = localStorage.getItem('isLoggedIn');
-      const storedDoctorId = localStorage.getItem('doctorId');
-      const storedDoctorName = localStorage.getItem('doctorName');
+      const storedUserId = localStorage.getItem('userId');
+      const storedUserRole = localStorage.getItem('userRole');
+      const storedToken = localStorage.getItem('token');
       
-      if (storedIsLoggedIn === 'true' && storedDoctorId) {
+      // Explicitly check for doctor role
+      if (
+        storedIsLoggedIn === 'true' && 
+        storedUserId && 
+        storedToken && 
+        storedUserRole === 'DOCTOR'
+      ) {
         setIsLoggedIn(true);
-        setDoctorId(storedDoctorId);
-        setDoctorName(storedDoctorName || '');
+        setDoctorId(storedUserId);
+        
+        // Fetch doctor details
+        fetchDoctorDetails(storedUserId);
       } else {
-        // Redirect to login if not logged in
+        // Redirect to login if not logged in or not a doctor
         router.push('/docs/login');
       }
       setIsLoading(false);
@@ -74,10 +117,11 @@ const IntegratedDashboard = () => {
 
   // Function to handle logout
   const handleLogout = () => {
-    localStorage.removeItem('doctorId');
-    localStorage.removeItem('doctorName');
-    localStorage.removeItem('doctorEmail');
-    localStorage.removeItem('isLoggedIn');
+    // Clear all localStorage items related to authentication
+    ['doctorId', 'doctorName', 'doctorEmail', 'isLoggedIn', 'token'].forEach(key => 
+      localStorage.removeItem(key)
+    );
+    
     setIsLoggedIn(false);
     router.push('/docs/login');
   };
@@ -237,7 +281,10 @@ const IntegratedDashboard = () => {
                     <h2 className="text-2xl font-bold mb-4">{item.label}</h2>
                     <div className="border-b border-gray-200 mb-4" />
                     {/* Render the appropriate component based on the active tab */}
-                    {React.createElement(item.component, { doctorId })}
+                    {React.createElement(item.component, { 
+                      doctorId, 
+                      doctorDetails 
+                    })}
                   </div>
                 </TabsContent>
               ))}

@@ -38,11 +38,10 @@ import Link from 'next/link';
 // Define types based on Prisma schema
 interface Doctor {
   id: string;
-  name: string;
-  email: string;
   specialization: string;
-  appointmentCount?: number; // Just count instead of full appointments array
   appointments?: Array<Appointment>;
+  appointmentCount?: number;
+  user: any;
 }
 
 interface Appointment {
@@ -50,7 +49,13 @@ interface Appointment {
   dateTime: Date | string | null;
   condition: string | null;
   status: 'NEW' | 'PENDING' | 'COMPLETED' | 'CANCELED';
-  patient: Patient;
+  patient: {
+    id: string;
+    name: string;
+    user: {
+      name: string;
+    }
+  };
 }
 
 interface Patient {
@@ -59,59 +64,16 @@ interface Patient {
 }
 
 interface AppointmentViewProps {
-  doctorId: string;
-  doctorName: string;
+  doctor: Doctor;
 }
 
-// Appointment view component that fetches its own data
-const AppointmentView: React.FC<AppointmentViewProps> = ({ doctorId, doctorName }) => {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`/api/doctors/${doctorId}/appointments`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch appointments');
-        }
-        const data = await response.json();
-        setAppointments(data);
-      } catch (err) {
-        console.error('Error fetching appointments:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch appointments');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAppointments();
-  }, [doctorId]);
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-        <span className="ml-2">Loading appointments...</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 p-4 rounded-md text-center text-red-600">
-        <p>Error: {error}</p>
-        <p>Please try again later.</p>
-      </div>
-    );
-  }
+// Appointment view component now uses doctor prop with pre-fetched appointments
+const AppointmentView: React.FC<AppointmentViewProps> = ({ doctor }) => {
+  const appointments = doctor.appointments || [];
 
   return (
     <div className="p-4">
-      <h2 className="text-xl font-semibold mb-4">Appointments for {doctorName}</h2>
+      <h2 className="text-xl font-semibold mb-4">Appointments for {doctor.user.name}</h2>
       
       {appointments.length === 0 ? (
         <div className="bg-gray-50 p-4 rounded-md text-center">
@@ -132,7 +94,7 @@ const AppointmentView: React.FC<AppointmentViewProps> = ({ doctorId, doctorName 
               {appointments.map((appointment) => (
                 <tr key={appointment.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {appointment.patient.name}
+                    {appointment.patient.user.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {appointment.dateTime ? new Date(appointment.dateTime).toLocaleString() : 'Not scheduled'}
@@ -193,7 +155,9 @@ const AdminDoctors: React.FC = () => {
         throw new Error('Failed to fetch doctors');
       }
       const data = await response.json();
-      const doctorsWithCount = data.map((doctor: Doctor) => ({
+
+      const doctors = data;
+      const doctorsWithCount = doctors.map((doctor: Doctor) => ({
         ...doctor,
         appointmentCount: doctor.appointments?.length || 0
       }));
@@ -219,8 +183,8 @@ const AdminDoctors: React.FC = () => {
       setFilteredDoctors(doctors);
     } else {
       const filtered = doctors.filter(doctor => 
-        doctor.name.toLowerCase().includes(term) || 
-        doctor.email.toLowerCase().includes(term) ||
+        doctor.user.name.toLowerCase().includes(term) || 
+        doctor.user.email.toLowerCase().includes(term) ||
         doctor.specialization.toLowerCase().includes(term)
       );
       setFilteredDoctors(filtered);
@@ -284,8 +248,8 @@ const AdminDoctors: React.FC = () => {
   // Edit doctor
   const handleEditDoctor = (doctor: Doctor) => {
     setCurrentDoctor(doctor);
-    setFormName(doctor.name);
-    setFormEmail(doctor.email);
+    setFormName(doctor.user.name);
+    setFormEmail(doctor.user.email);
     setFormPassword(''); // Don't populate password for security
     setFormSpecialization(doctor.specialization);
     setIsEditDialogOpen(true);
@@ -437,8 +401,8 @@ const AdminDoctors: React.FC = () => {
             ) : (
               filteredDoctors.map((doctor) => (
                 <TableRow key={doctor.id}>
-                  <TableCell className="font-medium">{doctor.name}</TableCell>
-                  <TableCell>{doctor.email}</TableCell>
+                  <TableCell className="font-medium">{doctor.user.name}</TableCell>
+                  <TableCell>{doctor.user.email}</TableCell>
                   <TableCell>{doctor.specialization}</TableCell>
                   <TableCell>{doctor.appointmentCount || 0}</TableCell>
                   <TableCell className="text-right">
@@ -635,7 +599,7 @@ const AdminDoctors: React.FC = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete {currentDoctor?.name}'s record and might affect appointments.
+              This will permanently delete {currentDoctor?.user.name}'s record and might affect appointments.
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -658,15 +622,14 @@ const AdminDoctors: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Doctor's Appointments</DialogTitle>
             <DialogDescription>
-              Viewing all appointments for {currentDoctor?.name}
+              Viewing all appointments for {currentDoctor?.user.name}
             </DialogDescription>
           </DialogHeader>
           
           {currentDoctor && (
             <div className="py-2">
               <AppointmentView 
-                doctorId={currentDoctor.id}
-                doctorName={currentDoctor.name}
+                doctor={currentDoctor}
               />
             </div>
           )}

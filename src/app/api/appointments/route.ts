@@ -1,97 +1,106 @@
 // app/api/appointments/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
+import { prisma } from '@/lib/prisma'
 
-const prisma = new PrismaClient();
+// Simplified Validation Schema
+const AppointmentCreateSchema = z.object({
+  patientId: z.string(),
+  doctorId: z.string().optional(),
+  dateTime: z.string().datetime().optional(),
+  status: z.enum(['NEW', 'PENDING', 'COMPLETED', 'CANCELED', 'EMERGENCY']).optional(),
+  condition: z.string().optional(),
+  description: z.string().optional(),
+  specialization: z.string().optional()
+})
 
-// GET /api/appointments - Get all appointments
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const appointments = await prisma.appointment.findMany({
       include: {
         patient: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            age: true,
-            gender: true,
-          }
+          include: { user: true }
         },
         doctor: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            specialization: true,
-          }
-        }
+          include: { user: true }
+        },
+        prescriptions: true,
+        tests: true
       },
-      orderBy: {
-        dateTime: 'desc',
-      },
-    });
+      orderBy: { dateTime: 'desc' }
+    })
 
-    return NextResponse.json(appointments);
+    return NextResponse.json(appointments)
   } catch (error) {
-    console.error('Error fetching appointments:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch appointments' },
-      { status: 500 }
-    );
+    console.error('Appointments fetch error:', error)
+    return NextResponse.json({ 
+      error: 'Failed to fetch appointments',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 
-// POST /api/appointments - Create a new appointment
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    
-    // Validate required fields
-    if (!body.patientId) {
-      return NextResponse.json(
-        { error: 'Patient ID is required' },
-        { status: 400 }
-      );
+    const rawData = await request.json()
+    const validatedData = AppointmentCreateSchema.parse(rawData)
+
+    // Validate patient exists
+    const patient = await prisma.patient.findUnique({
+      where: { id: validatedData.patientId }
+    })
+
+    if (!patient) {
+      return NextResponse.json({ 
+        error: 'Patient not found',
+        field: 'patientId'
+      }, { status: 404 })
     }
 
-    // Create the appointment
+    // Optional doctor validation
+    if (validatedData.doctorId) {
+      const doctor = await prisma.doctor.findUnique({
+        where: { id: validatedData.doctorId }
+      })
+      if (!doctor) {
+        return NextResponse.json({ 
+          error: 'Doctor not found',
+          field: 'doctorId'
+        }, { status: 404 })
+      }
+    }
+
     const appointment = await prisma.appointment.create({
       data: {
-        patientId: body.patientId,
-        doctorId: body.doctorId || null,
-        dateTime: body.dateTime ? new Date(body.dateTime) : null,
-        condition: body.condition || null,
-        specialization: body.specialization || null,
-        status: body.status || 'NEW',
+        ...validatedData,
+        status: validatedData.status || 'NEW',
+        dateTime: validatedData.dateTime ? new Date(validatedData.dateTime) : undefined,
+        specialization: validatedData.specialization
       },
       include: {
-        patient: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            age: true,
-            gender: true,
-          }
-        },
-        doctor: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            specialization: true,
-          }
-        }
-      },
-    });
+        patient: { include: { user: true } },
+        doctor: { include: { user: true } },
+        prescriptions: true,
+        tests: true
+      }
+    })
 
-    return NextResponse.json(appointment, { status: 201 });
+    return NextResponse.json(appointment, { status: 201 })
   } catch (error) {
-    console.error('Error creating appointment:', error);
-    return NextResponse.json(
-      { error: 'Failed to create appointment' },
-      { status: 500 }
-    );
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({
+        error: 'Validation failed',
+        details: error.errors.map(e => ({
+          path: e.path.join('.'),
+          message: e.message
+        }))
+      }, { status: 400 })
+    }
+
+    console.error('Appointment creation error:', error)
+    return NextResponse.json({ 
+      error: 'Failed to create appointment',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }

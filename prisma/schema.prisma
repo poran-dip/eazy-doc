@@ -7,19 +7,54 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  password      String?   // Hashed password for credential provider
-  emailVerified DateTime?
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
+// Enum definitions
+enum UserRole {
+  PATIENT
+  DOCTOR
+  AMBULANCE
+  ADMIN
 }
 
+enum AppointmentStatus {
+  NEW
+  PENDING
+  COMPLETED
+  CANCELED
+  EMERGENCY
+}
+
+enum AmbulanceStatus {
+  AVAILABLE
+  ON_DUTY
+  UNAVAILABLE
+}
+
+// Core User Model with Authentication Support
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String?   // Optional for OAuth users
+  name          String?
+  image         String?
+  role         UserRole  @default(PATIENT)
+  
+  // Authentication-related fields
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relation fields
+  accounts      Account[]
+  sessions      Session[]
+  
+  // User-specific detailed models
+  patient      Patient?
+  doctor       Doctor?
+  ambulance    Ambulance?
+  admin        Admin?
+}
+
+// OAuth Support Model
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -39,6 +74,7 @@ model Account {
   @@unique([provider, providerAccountId])
 }
 
+// Session Management
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
@@ -47,6 +83,7 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+// Verification Token for Email/Password Reset
 model VerificationToken {
   identifier String
   token      String   @unique
@@ -55,46 +92,94 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Doctor {
-  id             String   @id @default(cuid())
-  name           String
-  email          String   @unique
-  password       String
-  specialization String
-  appointments   Appointment[]
-}
-
+// Specialized User Type Models
 model Patient {
   id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  password     String
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
   age          Int?
   gender       String?
   appointments Appointment[]
 }
 
+model Doctor {
+  id             String       @id @default(cuid())
+  userId         String       @unique
+  user           User         @relation(fields: [userId], references: [id])
+  specialization String
+  license        String?
+  verified       Boolean      @default(false)
+  appointments   Appointment[]
+  ratings        Rating[]     @relation("DoctorRatings")
+}
+
+model Ambulance {
+  id           String           @id @default(cuid())
+  userId       String           @unique
+  user         User             @relation(fields: [userId], references: [id])
+  status       AmbulanceStatus  @default(AVAILABLE)
+  latitude     Float?
+  longitude    Float?
+  appointments Appointment[]
+  ratings      Rating[]         @relation("AmbulanceRatings")
+}
+
+model Admin {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+// Appointment Model
 model Appointment {
-  id                  String   @id @default(cuid())
-  patient             Patient  @relation(fields: [patientId], references: [id])
+  id                  String             @id @default(cuid())
+  patient             Patient            @relation(fields: [patientId], references: [id])
   patientId           String
-  doctor              Doctor?  @relation(fields: [doctorId], references: [id])
+  doctor              Doctor?            @relation(fields: [doctorId], references: [id])
   doctorId            String?
+  ambulance           Ambulance?         @relation(fields: [ambulanceId], references: [id])
+  ambulanceId         String?
+  
   dateTime            DateTime?
   condition           String?
   specialization      String?
-  status              Status
+  status              AppointmentStatus  @default(NEW)
   comments            String?
   description         String?
-  prescriptions       String[]
-  tests               String[]
-  relatedAppointments Appointment[] @relation("RelatedAppointments")
-  relatedTo           Appointment[] @relation("RelatedAppointments")
+  prescriptions       Prescription[]     @relation("PrescribedMedicines")
+  tests               MedicalTest[]      @relation("PrescribedTests")
+  
+  relatedAppointments Appointment[]      @relation("RelatedAppointments")
+  relatedTo           Appointment[]      @relation("RelatedAppointments")
 }
 
-enum Status {
-  NEW
-  PENDING
-  COMPLETED
-  CANCELED
+// Appointment Related Info
+model Prescription {
+  id            String        @id @default(cuid())
+  appointmentId String
+  appointment   Appointment   @relation("PrescribedMedicines",  fields: [appointmentId], references: [id])
+  medication    String
+  dosage        String
+  instructions  String?
+}
+
+model MedicalTest {
+  id            String        @id @default(cuid())
+  appointmentId String
+  appointment   Appointment   @relation("PrescribedTests", fields: [appointmentId], references: [id])
+  testType      String
+  results       String?
+  datePerformed DateTime
+}
+
+// Rating Model
+model Rating {
+  id              String   @id @default(cuid())
+  doctorId        String?
+  ambulanceId     String?
+  stars           Int
+  comment         String?
+  
+  doctor          Doctor?  @relation("DoctorRatings", fields: [doctorId], references: [id])
+  ambulance       Ambulance? @relation("AmbulanceRatings", fields: [ambulanceId], references: [id])
 }

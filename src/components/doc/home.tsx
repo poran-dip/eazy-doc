@@ -44,6 +44,7 @@ enum AppointmentStatus {
 
   interface DocHomeProps {
     doctorId: string;
+    doctorDetails?: any;
   }
 
   interface ApiError {
@@ -79,7 +80,7 @@ enum AppointmentStatus {
             setIsLoading(true);
             try {
                 // Fetch all appointments with a single API call
-                const response = await fetch(`/api/doctors/${doctorId}/appointments?includePatientDetails=true`);
+                const response = await fetch(`/api/appointments/?doctorId=${doctorId}&includePatientDetails=true`);
                 if (!response.ok) throw new Error('Failed to fetch appointments');
                 
                 const data = await response.json();
