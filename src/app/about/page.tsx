@@ -35,12 +35,12 @@ export default function AboutUsPage() {
       bio: 'Presentation ninja and coordination guru. Transforms technical chaos into smooth, understandable narratives.'
     },
     {
-      name: 'Hirok',
+      name: 'Hirok Jyoti Sarma',
       role: 'Research & Data Analyst',
       college: 'Assam Down Town University',
       contact: '#',
-      image: '/hirok.jpg',
-      linkedin: '#',
+      image: '/hirok.jpeg',
+      linkedin: 'https://www.linkedin.com/in/hirak-jyoti-sarma-06604a267',
       github: '#',
       bio: 'Data detective digging deep into insights. Transforms raw numbers into meaningful stories.'
     }

@@ -4,6 +4,8 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { Search } from "lucide-react"
+import Cookies from 'js-cookie'
+import { useRouter } from 'next/navigation'
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -12,68 +14,81 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 
-// Import Prisma client
-import { prisma } from "@/lib/prisma"
-
 // Type for Doctor Search Result
 interface DoctorResult {
   id: string
   name: string | null
   specialty: string
   image: string | null
-  averageRating: number
-  reviewCount: number
+  rating: number
+  location: string | null
+  appointments: any[]
 }
 
 export default function DoctorSearch() {
   const [specialty, setSpecialty] = useState("")
   const [location, setLocation] = useState("")
-  const [searchResults, setSearchResults] = useState<DoctorResult[]>([])
+  const [searchResults, setSearchResults] = useState<DoctorResult[] | null>(null)
   const [isSearching, setIsSearching] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false)
+
+  const router = useRouter();
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSearching(true)
+    setSearchResults(null)
+    setHasSearched(true)
 
     try {
-      // Fetch doctors based on search criteria
-      const doctors = await prisma.doctor.findMany({
-        where: {
-          // Filter by specialty if selected
-          ...(specialty ? { specialization: specialty } : {}),
-          verified: true // Only show verified doctors
-        },
-        include: {
-          user: true, // Include user details to get name and image
-          ratings: true // Include ratings to calculate average
-        },
-        take: 10 // Limit to 10 results
-      })
+      // Fetch doctors from API route
+      const response = await fetch(`/api/doctors?${new URLSearchParams({
+        ...(specialty ? { specialization: specialty } : {}),
+        ...(location ? { location } : {})
+      }).toString()}`)
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch doctors')
+      }
+
+      const doctors = await response.json()
 
       // Transform doctors into search results
-      const results: DoctorResult[] = doctors.map(doctor => {
-        // Calculate average rating
-        const averageRating = doctor.ratings.length > 0 
-          ? doctor.ratings.reduce((sum, rating) => sum + rating.stars, 0) / doctor.ratings.length 
-          : 0
-
-        return {
-          id: doctor.id,
-          name: doctor.user.name,
-          specialty: doctor.specialization,
-          image: doctor.user.image,
-          averageRating,
-          reviewCount: doctor.ratings.length
-        }
-      })
+      const results: DoctorResult[] = doctors.map((doctor: any) => ({
+        id: doctor.id,
+        name: doctor.name,
+        specialty: doctor.specialization,
+        image: doctor.image,
+        rating: Number(doctor.rating),
+        location: doctor.location,
+        appointments: doctor.appointments || []
+      }))
 
       setSearchResults(results)
     } catch (error) {
       console.error("Error searching for doctors:", error)
-      // Optionally set an error state or show a toast
+      setSearchResults([])
     } finally {
       setIsSearching(false)
     }
+  }
+
+  // Reset search results when specialty or location changes
+  const handleSpecialtyChange = (value: string) => {
+    setSpecialty(value)
+    setSearchResults(null)
+    setHasSearched(false)
+  }
+
+  const handleLocationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocation(e.target.value)
+    setSearchResults(null)
+    setHasSearched(false)
+  }
+
+  const handleBookAppointment = (doctorId: string) => {
+    Cookies.set('selectedDoctorId', doctorId, { expires: 2/1440 })
+    router.push(`/book`)
   }
 
   return (
@@ -86,7 +101,7 @@ export default function DoctorSearch() {
                 <label htmlFor="specialty" className="text-sm font-medium block mb-2">
                   Specialty
                 </label>
-                <Select value={specialty} onValueChange={setSpecialty}>
+                <Select value={specialty} onValueChange={handleSpecialtyChange}>
                   <SelectTrigger id="specialty" className="w-full">
                     <SelectValue placeholder="Select specialty" />
                   </SelectTrigger>
@@ -109,9 +124,8 @@ export default function DoctorSearch() {
                   id="location"
                   placeholder="City, State or Zip Code"
                   value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                  onChange={handleLocationChange}
                   className="w-full"
-                  disabled // Temporarily disabled until location is added to schema
                 />
               </div>
               <div className="md:col-span-2 flex items-end">
@@ -129,7 +143,20 @@ export default function DoctorSearch() {
         </CardContent>
       </Card>
 
-      {searchResults.length > 0 && (
+      {hasSearched && searchResults?.length === 0 && (
+        <div className="mt-8 text-center">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-lg text-muted-foreground">
+                No doctors found{specialty ? ` for ${specialty}` : ''}{location ? ` in ${location}` : ''}. 
+                Please try different search criteria.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {searchResults && searchResults.length > 0 && (
         <div className="space-y-4 mt-8">
           <h3 className="text-xl font-semibold">Search Results</h3>
           <div className="space-y-4">
@@ -163,7 +190,7 @@ export default function DoctorSearch() {
                                 xmlns="http://www.w3.org/2000/svg"
                                 viewBox="0 0 24 24"
                                 fill="currentColor"
-                                className={`w-4 h-4 ${i < Math.floor(doctor.averageRating) ? "opacity-100" : "opacity-30"}`}
+                                className={`w-4 h-4 ${i < Math.floor(doctor.rating) ? "opacity-100" : "opacity-30"}`}
                               >
                                 <path
                                   fillRule="evenodd"
@@ -174,24 +201,26 @@ export default function DoctorSearch() {
                             ))}
                         </div>
                         <span className="ml-2 text-sm">
-                          {doctor.averageRating.toFixed(1)} ({doctor.reviewCount} reviews)
+                          {doctor.rating.toFixed(1)} ({doctor.appointments.length} reviews)
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <Badge variant="outline" className="text-xs">
                           Specialty: {doctor.specialty}
                         </Badge>
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
-                          Verified Doctor
-                        </Badge>
+                        {doctor.location && (
+                          <Badge variant="outline" className="text-xs">
+                            Location: {doctor.location}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center sm:flex-col sm:items-end gap-2 mt-4 sm:mt-0">
-                      <Button asChild className="bg-black text-white hover:bg-gray-800">
-                        <Link href={`/appointment/${doctor.id}`}>Book Appointment</Link>
+                      <Button className="bg-black text-white cursor-pointer hover:bg-gray-800" onClick={() => handleBookAppointment(doctor.id)}>
+                        Book Appointment
                       </Button>
                       <Button variant="outline" asChild>
-                        <Link href={`/doctor/${doctor.id}`}>View Profile</Link>
+                        <Link href={`#`}>View Profile</Link>
                       </Button>
                     </div>
                   </div>

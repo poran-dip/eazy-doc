@@ -1,46 +1,91 @@
+"use client"
+
+import { useState, useEffect } from 'react'
 import Image from "next/image"
 import Link from "next/link"
+import Cookies from 'js-cookie'
+import { useRouter } from 'next/navigation'
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { prisma } from "@/lib/prisma"
 
-async function getFeaturedDoctors() {
-  try {
-    const doctors = await prisma.doctor.findMany({
-      take: 4,
-      include: {
-        user: true,
-        ratings: true
-      },
-      orderBy: {
-        ratings: {
-          _count: 'desc' // Optional: order by most rated doctors
-        }
-      }
-    })
-
-    return doctors.map(doctor => ({
-      id: doctor.id,
-      name: doctor.user.name || 'Unnamed Doctor',
-      specialty: doctor.specialization,
-      rating: doctor.ratings.length > 0 
-        ? doctor.ratings.reduce((sum, rating) => sum + rating.stars, 0) / doctor.ratings.length 
-        : 0,
-      reviews: doctor.ratings.length,
-      location: 'Location Not Available', // You might want to add location to your schema
-      availability: 'Availability Not Implemented', // Implement logic for checking availability
-      image: doctor.user.image || "/placeholder.svg?height=400&width=400"
-    }))
-  } catch (error) {
-    console.error('Error fetching featured doctors:', error)
-    return []
-  }
+interface Doctor {
+  id: string;
+  name: string;
+  image: string;
+  specialization: string;
+  rating: number;
+  location: string;
+  status: string;
+  reviews: number;
 }
 
-export default async function FeaturedDoctors() {
-  const doctors = await getFeaturedDoctors()
+export default function FeaturedDoctors() {
+  const [doctors, setDoctors] = useState<Doctor[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
+
+  useEffect(() => {
+    async function fetchFeaturedDoctors() {
+      try {
+        const response = await fetch('http://localhost:3000/api/doctors', { method: 'GET' })
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch doctors')
+        }
+
+        const fetchedDoctors = await response.json()
+
+        // Take first 4 doctors and map to desired format
+        const formattedDoctors = fetchedDoctors.slice(0, 4).map((doctor: any) => ({
+          id: doctor.id,
+          name: doctor.name || 'Unnamed Doctor',
+          specialization: doctor.specialization,
+          rating: doctor.rating || 0,
+          reviews: doctor.appointments.length,
+          location: doctor.location || 'Location Not Specified',
+          image: doctor.image || "/placeholder.svg?height=400&width=400",
+          status: doctor.status
+        }))
+
+        setDoctors(formattedDoctors)
+        setIsLoading(false)
+      } catch (error) {
+        console.error('Error fetching featured doctors:', error)
+        setError('Failed to load doctors')
+        setIsLoading(false)
+      }
+    }
+
+    fetchFeaturedDoctors()
+  }, [])
+
+  const handleBookAppointment = (doctorId: string) => {
+    Cookies.set('selectedDoctorId', doctorId, { expires: 2/1440 })
+    router.push(`/book`)
+  }
+
+  if (isLoading) {
+    return (
+      <section className="py-16 md:py-20 bg-white">
+        <div className="container px-4 md:px-6 max-w-6xl mx-auto text-center">
+          <p>Loading doctors...</p>
+        </div>
+      </section>
+    )
+  }
+
+  if (error) {
+    return (
+      <section className="py-16 md:py-20 bg-white">
+        <div className="container px-4 md:px-6 max-w-6xl mx-auto text-center">
+          <p className="text-red-500">{error}</p>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="py-16 md:py-20 bg-white">
@@ -52,14 +97,19 @@ export default async function FeaturedDoctors() {
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {doctors.map((doctor) => (
+          {doctors.map((doctor: Doctor) => (
             <Card key={doctor.id} className="overflow-hidden border shadow-sm">
               <div className="aspect-square relative">
-                <Image src={doctor.image || "/placeholder.svg"} alt={doctor.name} fill className="object-cover" />
+                <Image 
+                  src={doctor.image || "/placeholder.svg"} 
+                  alt={doctor.name} 
+                  fill 
+                  className="object-cover" 
+                />
               </div>
               <CardHeader className="p-4">
                 <CardTitle className="text-xl">{doctor.name}</CardTitle>
-                <CardDescription>{doctor.specialty}</CardDescription>
+                <CardDescription>{doctor.specialization}</CardDescription>
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <div className="flex items-center mb-2">
@@ -83,17 +133,24 @@ export default async function FeaturedDoctors() {
                       ))}
                   </div>
                   <span className="ml-2 text-sm font-medium">
-                    {doctor.rating.toFixed(1)} ({doctor.reviews} reviews)
+                    {Number(doctor.rating).toFixed(1)} ({doctor.reviews} reviews)
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground mb-2">{doctor.location}</p>
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  {doctor.availability}
+                <Badge 
+                  variant="outline" 
+                  className={`
+                    ${doctor.status === 'AVAILABLE' ? 'bg-green-50 text-green-700 border-green-200' : 
+                      doctor.status === 'ON_DUTY' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
+                      'bg-red-50 text-red-700 border-red-200'}
+                  `}
+                >
+                  {doctor.status}
                 </Badge>
               </CardContent>
               <CardFooter className="p-4 pt-0">
-                <Button className="w-full bg-black text-white hover:bg-gray-800" asChild>
-                  <Link href={`/appointment/${doctor.id}`}>Book Appointment</Link>
+                <Button className="w-full bg-black text-white hover:bg-gray-800" onClick={() => handleBookAppointment(doctor.id)}>
+                  Book Appointment
                 </Button>
               </CardFooter>
             </Card>

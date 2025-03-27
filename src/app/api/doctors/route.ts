@@ -46,9 +46,17 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url)
+    const specialization = searchParams.get('specialization')
+    const location = searchParams.get('location')
+
     const doctors = await prisma.doctor.findMany({
+      where: {
+        ...(specialization ? { specialization } : {}),
+        ...(location ? { location } : {})
+      },
       select: {
         id: true,
         email: true,
