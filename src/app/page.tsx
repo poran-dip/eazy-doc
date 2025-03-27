@@ -1,6 +1,6 @@
-import DoctorSearch from "@/components/doctor-search"
-import FeaturedDoctors from "@/components/features-doctor"
-import MedbotPromo from "@/components/medbot-promo"
+import DoctorSearch from "@/components/homepage/doctor-search"
+import FeaturedDoctors from "@/components/homepage/featured-doctors"
+import MedbotPromo from "@/components/homepage/medbot-promo"
 import Navbar from "@/components/navbar"
 
 export default function Home() {

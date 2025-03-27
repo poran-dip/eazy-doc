@@ -1,7 +1,6 @@
 import React from 'react';
 import Navbar from '@/components/navbar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Linkedin, Github, Mail } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 
 export default function AboutUsPage() {
   const teamMembers = [
@@ -10,8 +9,8 @@ export default function AboutUsPage() {
       role: 'AI & Frontend Dev',
       college: 'Assam Down Town University',
       contact: '#',
-      image: '/images/dikshayn.png',
-      linkedin: '#',
+      image: '/dikshayn.jpeg',
+      linkedin: 'https://www.linkedin.com/in/dikshyan-chakraborty-27a1741b4/',
       github: 'https://github.com/Dikshyan',
       bio: 'Code wizard turning AI dreams into pixel-perfect realities. Turning coffee into complex algorithms.'
     },
@@ -20,9 +19,9 @@ export default function AboutUsPage() {
       role: 'Backend & System Architect',
       college: 'Assam Engineering College',
       contact: 'porandip4@gmail.com',
-      image: '/images/poran.jpg',
+      image: '/poran.jpg',
       linkedin: 'https://www.linkedin.com/in/poran-dip/',
-      github: '#',
+      github: 'https://github.com/poran-dip',
       bio: 'Backend maestro who makes servers sing and databases dance. Solving complex problems with elegant solutions.'
     },
     {
@@ -30,7 +29,7 @@ export default function AboutUsPage() {
       role: 'Presentation & Project Coordination',
       college: 'Amity University',
       contact: '#',
-      image: '/images/rajdeep.png',
+      image: '/rajdeep.jpg',
       linkedin: '#',
       github: '#',
       bio: 'Presentation ninja and coordination guru. Transforms technical chaos into smooth, understandable narratives.'
@@ -40,7 +39,7 @@ export default function AboutUsPage() {
       role: 'Research & Data Analyst',
       college: 'Assam Down Town University',
       contact: '#',
-      image: '/images/hirok.png',
+      image: '/hirok.jpg',
       linkedin: '#',
       github: '#',
       bio: 'Data detective digging deep into insights. Transforms raw numbers into meaningful stories.'
@@ -55,7 +54,6 @@ export default function AboutUsPage() {
     { name: 'Tailwind CSS', link: 'https://tailwindcss.com/' },
     { name: 'Shadcn UI', link: 'https://ui.shadcn.com/' },
     { name: 'Lucide React', link: 'https://lucide.dev/' },
-    { name: 'Next Auth', link: 'https://next-auth.js.org/' },
     { name: 'Prisma', link: 'https://www.prisma.io/' },
     { name: 'Google Gemini', link: 'https://gemini.google.com/' }
   ];
@@ -108,17 +106,7 @@ export default function AboutUsPage() {
                         href={`mailto:${member.contact}`} 
                         className="text-muted-foreground hover:text-primary hover:scale-110 transition-all"
                       >
-                        <Mail />
-                      </a>
-                    )}
-                    {member.linkedin !== '#' && (
-                      <a 
-                        href={member.linkedin} 
-                        className="text-muted-foreground hover:text-primary hover:scale-110 transition-all" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                      >
-                        <Linkedin />
+                        <img src="/icons/gmail.svg" alt="gmail" width="30" height="30" className="opacity-50 hover:opacity-100 transition-opacity duration-300"/>
                       </a>
                     )}
                     {member.github !== '#' && (
@@ -128,7 +116,17 @@ export default function AboutUsPage() {
                         target="_blank" 
                         rel="noopener noreferrer"
                       >
-                        <Github />
+                        <img src="/icons/github.svg" alt="github" width="30" height="30" className="opacity-50 hover:opacity-100 transition-opacity duration-300"/>
+                      </a>
+                    )}
+                    {member.linkedin !== '#' && (
+                      <a 
+                        href={member.linkedin} 
+                        className="text-muted-foreground hover:text-primary hover:scale-110 transition-all" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        <img src="/icons/linkedin.svg" alt="linkedin" width="30" height="30" className="opacity-50 hover:opacity-100 transition-opacity duration-300"/>
                       </a>
                     )}
                   </div>
