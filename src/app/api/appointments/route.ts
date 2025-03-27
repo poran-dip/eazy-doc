@@ -16,7 +16,26 @@ const AppointmentCreateSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const doctorId = searchParams.get('doctorId')
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
+
+    const whereClause: any = {}
+
+    if (doctorId) {
+      whereClause.doctorId = doctorId
+    }
+
+    if (startDate && endDate) {
+      whereClause.dateTime = {
+        gte: new Date(startDate),
+        lte: new Date(endDate)
+      }
+    }
+
     const appointments = await prisma.appointment.findMany({
+      where: whereClause,
       include: {
         patient: {
           include: { user: true }

@@ -108,25 +108,36 @@ const DocAppointments = () => {
   
   // Get doctor ID from session/context/localStorage
   // For now we'll hardcode it for testing
-  const doctorId = localStorage.getItem('doctorId');
+  const userId = localStorage.getItem('userId');
   
   useEffect(() => {
     const fetchAppointments = async () => {
       setIsLoading(true);
       try {
+        const doctorResponse = await fetch(`/api/doctors/user/${userId}`);
+        
+        if (!doctorResponse.ok) {
+          throw new Error('Failed to find doctor');
+        }
+        
+        const doctorData = await doctorResponse.json();
+        const doctorId = doctorData.id;
+        
         // Calculate date range for next 7 days
         const startDate = weekDates[0].isoString;
         const endDate = weekDates[6].isoString;
         
         // Fetch appointments from API with date range
         const response = await fetch(
-          `/api/doctors/${doctorId}/appointments?startDate=${startDate}&endDate=${endDate}&includePatientDetails=true`
+          `/api/appointments?doctorId=${doctorId}&startDate=${startDate}&endDate=${endDate}&includePatientDetails=true`
         );
         
         if (!response.ok) {
           throw new Error('Failed to fetch appointments');
         }
         
+        console.log("Response: ", response);
+
         const data: AppointmentData[] = await response.json();
         
         // Transform appointments into weekly schedule format
@@ -143,7 +154,7 @@ const DocAppointments = () => {
     };
     
     fetchAppointments();
-  }, [doctorId]);
+  }, [userId]);
   
   // Transform API data to weekly schedule format
   const formatAppointmentsToWeeklySchedule = (appointments: AppointmentData[], dates: typeof weekDates): WeeklySchedule => {

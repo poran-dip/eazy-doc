@@ -19,9 +19,11 @@ export async function GET(
   context: { params: { doctorId: string } }
 ) {
   try {
-    const { params } = context
+    const params = await context.params;
+    const { doctorId } = params;
+    console.log("doctorId:", doctorId);
     const doctor = await prisma.doctor.findUnique({
-      where: { id: params.doctorId },
+      where: { userId: doctorId },
       include: {
         user: true,
         appointments: {
@@ -52,12 +54,12 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest, 
-  context: { params: { doctorId: string } }
+  { params }: { params: { doctorId: string } }
 ) {
   try {
-    const { params } = context
+    const { doctorId } = params
     const existingDoctor = await prisma.doctor.findUnique({
-      where: { id: params.doctorId },
+      where: { userId: doctorId },
       include: { user: true }
     })
 
@@ -96,7 +98,7 @@ export async function PATCH(
       
       // Update doctor details
       return tx.doctor.update({
-        where: { id: params.doctorId },
+        where: { id: doctorId },
         data: {
           ...(updatedFields.specialization && { specialization: updatedFields.specialization }),
           ...(updatedFields.license && { license: updatedFields.license }),
@@ -132,13 +134,13 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest, 
-  context: { params: { doctorId: string } }
+  { params }: { params: { doctorId: string } }
 ) {
   try {
-    const { params } = context
+    const { doctorId } = await params;
 
     const existingDoctor = await prisma.doctor.findUnique({
-      where: { id: params.doctorId },
+      where: { id: doctorId },
       include: { user: true }
     })
 
@@ -148,27 +150,27 @@ export async function DELETE(
 
     await prisma.$transaction(async (tx) => {
       await tx.rating.deleteMany({
-        where: { doctorId: params.doctorId }
+        where: { doctorId: doctorId }
       })
       await tx.prescription.deleteMany({
         where: { 
           appointment: { 
-            doctorId: params.doctorId 
+            doctorId: doctorId 
           } 
         }
       })
       await tx.medicalTest.deleteMany({
         where: { 
           appointment: { 
-            doctorId: params.doctorId 
+            doctorId: doctorId 
           } 
         }
       })
       await tx.appointment.deleteMany({
-        where: { doctorId: params.doctorId }
+        where: { doctorId: doctorId }
       })
       await tx.doctor.delete({
-        where: { id: params.doctorId }
+        where: { id: doctorId }
       })
       await tx.user.delete({
         where: { id: existingDoctor.user.id }

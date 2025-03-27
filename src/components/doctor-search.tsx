@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { Search } from "lucide-react"
@@ -13,58 +12,68 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 
+// Import Prisma client
+import { prisma } from "@/lib/prisma"
+
+// Type for Doctor Search Result
+interface DoctorResult {
+  id: string
+  name: string | null
+  specialty: string
+  image: string | null
+  averageRating: number
+  reviewCount: number
+}
+
 export default function DoctorSearch() {
   const [specialty, setSpecialty] = useState("")
   const [location, setLocation] = useState("")
-  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searchResults, setSearchResults] = useState<DoctorResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSearching(true)
 
-    // Simulate API call with timeout
-    setTimeout(() => {
-      // Mock search results
-      const results = [
-        {
-          id: 101,
-          name: "Dr. Robert Smith",
-          specialty: "Cardiology",
-          rating: 4.7,
-          reviews: 83,
-          location: "New York, NY",
-          distance: "2.3 miles away",
-          availability: "Available Today",
-          image: "/placeholder.svg?height=100&width=100",
+    try {
+      // Fetch doctors based on search criteria
+      const doctors = await prisma.doctor.findMany({
+        where: {
+          // Filter by specialty if selected
+          ...(specialty ? { specialization: specialty } : {}),
+          verified: true // Only show verified doctors
         },
-        {
-          id: 102,
-          name: "Dr. Lisa Wong",
-          specialty: "Dermatology",
-          rating: 4.9,
-          reviews: 127,
-          location: "New York, NY",
-          distance: "3.1 miles away",
-          availability: "Available Tomorrow",
-          image: "/placeholder.svg?height=100&width=100",
+        include: {
+          user: true, // Include user details to get name and image
+          ratings: true // Include ratings to calculate average
         },
-        {
-          id: 103,
-          name: "Dr. David Miller",
-          specialty: "General Practice",
-          rating: 4.8,
-          reviews: 95,
-          location: "New York, NY",
-          distance: "1.5 miles away",
-          availability: "Available Today",
-          image: "/placeholder.svg?height=100&width=100",
-        },
-      ]
+        take: 10 // Limit to 10 results
+      })
+
+      // Transform doctors into search results
+      const results: DoctorResult[] = doctors.map(doctor => {
+        // Calculate average rating
+        const averageRating = doctor.ratings.length > 0 
+          ? doctor.ratings.reduce((sum, rating) => sum + rating.stars, 0) / doctor.ratings.length 
+          : 0
+
+        return {
+          id: doctor.id,
+          name: doctor.user.name,
+          specialty: doctor.specialization,
+          image: doctor.user.image,
+          averageRating,
+          reviewCount: doctor.ratings.length
+        }
+      })
 
       setSearchResults(results)
+    } catch (error) {
+      console.error("Error searching for doctors:", error)
+      // Optionally set an error state or show a toast
+    } finally {
       setIsSearching(false)
-    }, 1500)
+    }
   }
 
   return (
@@ -82,13 +91,13 @@ export default function DoctorSearch() {
                     <SelectValue placeholder="Select specialty" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cardiology">Cardiology</SelectItem>
-                    <SelectItem value="dermatology">Dermatology</SelectItem>
-                    <SelectItem value="neurology">Neurology</SelectItem>
-                    <SelectItem value="orthopedics">Orthopedics</SelectItem>
-                    <SelectItem value="pediatrics">Pediatrics</SelectItem>
-                    <SelectItem value="psychiatry">Psychiatry</SelectItem>
-                    <SelectItem value="general">General Practice</SelectItem>
+                    <SelectItem value="Cardiology">Cardiology</SelectItem>
+                    <SelectItem value="Dermatology">Dermatology</SelectItem>
+                    <SelectItem value="Neurology">Neurology</SelectItem>
+                    <SelectItem value="Orthopedics">Orthopedics</SelectItem>
+                    <SelectItem value="Pediatrics">Pediatrics</SelectItem>
+                    <SelectItem value="Psychiatry">Psychiatry</SelectItem>
+                    <SelectItem value="General Practice">General Practice</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -102,10 +111,15 @@ export default function DoctorSearch() {
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   className="w-full"
+                  disabled // Temporarily disabled until location is added to schema
                 />
               </div>
               <div className="md:col-span-2 flex items-end">
-                <Button type="submit" className="w-full bg-black text-white hover:bg-gray-800" disabled={isSearching}>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-black text-white hover:bg-gray-800" 
+                  disabled={isSearching}
+                >
                   <Search className="h-4 w-4 mr-2" />
                   {isSearching ? "Searching..." : "Search"}
                 </Button>
@@ -124,12 +138,14 @@ export default function DoctorSearch() {
                 <CardContent className="p-6">
                   <div className="flex flex-col sm:flex-row gap-4">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={doctor.image} alt={doctor.name} />
+                      <AvatarImage 
+                        src={doctor.image || "/placeholder.svg?height=100&width=100"} 
+                        alt={doctor.name || "Doctor"} 
+                      />
                       <AvatarFallback>
-                        {doctor.name
-                          .split(" ")
+                        {doctor.name?.split(" ")
                           .map((n: string) => n[0])
-                          .join("")}
+                          .join("") || "DR"}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 space-y-2">
@@ -147,7 +163,7 @@ export default function DoctorSearch() {
                                 xmlns="http://www.w3.org/2000/svg"
                                 viewBox="0 0 24 24"
                                 fill="currentColor"
-                                className={`w-4 h-4 ${i < Math.floor(doctor.rating) ? "opacity-100" : "opacity-30"}`}
+                                className={`w-4 h-4 ${i < Math.floor(doctor.averageRating) ? "opacity-100" : "opacity-30"}`}
                               >
                                 <path
                                   fillRule="evenodd"
@@ -158,18 +174,15 @@ export default function DoctorSearch() {
                             ))}
                         </div>
                         <span className="ml-2 text-sm">
-                          {doctor.rating} ({doctor.reviews} reviews)
+                          {doctor.averageRating.toFixed(1)} ({doctor.reviewCount} reviews)
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <Badge variant="outline" className="text-xs">
-                          {doctor.location}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {doctor.distance}
+                          Specialty: {doctor.specialty}
                         </Badge>
                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
-                          {doctor.availability}
+                          Verified Doctor
                         </Badge>
                       </div>
                     </div>

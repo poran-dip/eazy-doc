@@ -4,50 +4,43 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { prisma } from "@/lib/prisma"
 
-export default function FeaturedDoctors() {
-  const doctors = [
-    {
-      id: 1,
-      name: "Dr. Sarah Johnson",
-      specialty: "Cardiology",
-      rating: 4.9,
-      reviews: 124,
-      location: "New York, NY",
-      availability: "Available Today",
-      image: "/placeholder.svg?height=400&width=400",
-    },
-    {
-      id: 2,
-      name: "Dr. Michael Chen",
-      specialty: "Dermatology",
-      rating: 4.8,
-      reviews: 98,
-      location: "San Francisco, CA",
-      availability: "Available Tomorrow",
-      image: "/placeholder.svg?height=400&width=400",
-    },
-    {
-      id: 3,
-      name: "Dr. Emily Rodriguez",
-      specialty: "Pediatrics",
-      rating: 4.9,
-      reviews: 156,
-      location: "Chicago, IL",
-      availability: "Available Today",
-      image: "/placeholder.svg?height=400&width=400",
-    },
-    {
-      id: 4,
-      name: "Dr. James Wilson",
-      specialty: "Orthopedics",
-      rating: 4.7,
-      reviews: 87,
-      location: "Boston, MA",
-      availability: "Available in 2 days",
-      image: "/placeholder.svg?height=400&width=400",
-    },
-  ]
+async function getFeaturedDoctors() {
+  try {
+    const doctors = await prisma.doctor.findMany({
+      take: 4,
+      include: {
+        user: true,
+        ratings: true
+      },
+      orderBy: {
+        ratings: {
+          _count: 'desc' // Optional: order by most rated doctors
+        }
+      }
+    })
+
+    return doctors.map(doctor => ({
+      id: doctor.id,
+      name: doctor.user.name || 'Unnamed Doctor',
+      specialty: doctor.specialization,
+      rating: doctor.ratings.length > 0 
+        ? doctor.ratings.reduce((sum, rating) => sum + rating.stars, 0) / doctor.ratings.length 
+        : 0,
+      reviews: doctor.ratings.length,
+      location: 'Location Not Available', // You might want to add location to your schema
+      availability: 'Availability Not Implemented', // Implement logic for checking availability
+      image: doctor.user.image || "/placeholder.svg?height=400&width=400"
+    }))
+  } catch (error) {
+    console.error('Error fetching featured doctors:', error)
+    return []
+  }
+}
+
+export default async function FeaturedDoctors() {
+  const doctors = await getFeaturedDoctors()
 
   return (
     <section className="py-16 md:py-20 bg-white">
@@ -90,7 +83,7 @@ export default function FeaturedDoctors() {
                       ))}
                   </div>
                   <span className="ml-2 text-sm font-medium">
-                    {doctor.rating} ({doctor.reviews} reviews)
+                    {doctor.rating.toFixed(1)} ({doctor.reviews} reviews)
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground mb-2">{doctor.location}</p>
@@ -107,10 +100,11 @@ export default function FeaturedDoctors() {
           ))}
         </div>
         <div className="flex justify-center mt-10">
-          <Button variant="outline">View All Doctors</Button>
+          <Button variant="outline">
+            <Link href="/all-doctors">View All Doctors</Link>
+          </Button>
         </div>
       </div>
     </section>
   )
 }
-

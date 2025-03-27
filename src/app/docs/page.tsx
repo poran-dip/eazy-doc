@@ -21,6 +21,7 @@ import DocSettings from '@/components/doc/settings';
 // API utility for type-safe fetching
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const token = localStorage.getItem('token');
+  console.log("Token: ", token);
   const headers = {
     ...options.headers,
     'Authorization': `Bearer ${token}`,
@@ -51,6 +52,7 @@ const IntegratedDashboard = () => {
   // Fetch doctor details
   const fetchDoctorDetails = async (doctorId: string) => {
     try {
+      console.log("Fetching doctor with ID:", doctorId);
       const doctorData = await fetchWithAuth(`/api/doctors/${doctorId}`);
       setDoctorDetails(doctorData);
       setDoctorName(doctorData.user.name);
