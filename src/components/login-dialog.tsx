@@ -216,9 +216,10 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
         callbackUrl: "/dashboard",
         redirect: true
       });
+      console.log(result);
     } catch (error) {
       setError("Failed to sign in with Google");
-      console.error("Failed to sign in with Google");
+      console.error("Failed to sign in with Google", error);
     } finally {
       setIsLoading(false);
     }

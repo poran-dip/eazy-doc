@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-export default function AdminLoginPage() {
+export default function DoctorLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -11,11 +11,11 @@ export default function AdminLoginPage() {
 
   const router = useRouter()
 
-  // Check for existing admin session on page load
+  // Check for existing doctor session on page load
   useEffect(() => {
-    const adminId = localStorage.getItem('adminId')
-    if (adminId) {
-      router.push('/admin/patients')
+    const doctorId = localStorage.getItem('doctorId')
+    if (doctorId) {
+      router.push('/docs')
     }
   }, [router])
 
@@ -25,7 +25,7 @@ export default function AdminLoginPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/admin', {
+      const response = await fetch('/api/doctors/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -36,20 +36,20 @@ export default function AdminLoginPage() {
       const data = await response.json()
 
       if (response.ok) {
-        // Store admin ID in localStorage
-        localStorage.setItem('adminId', data.adminId)
-        localStorage.setItem('adminName', data.name)
+        // Store doctor ID in localStorage
+        localStorage.setItem('doctorId', data.doctorId)
         localStorage.setItem('isLoggedIn', 'true')
+        localStorage.setItem('role', 'doctor')
         
-        // Redirect to admin dashboard
-        router.push('/admin/patients')
+        // Redirect to doctor dashboard
+        router.push('/docs')
       } else {
         // Set error message from server
-        setError(data.message || 'Invalid admin credentials')
+        setError(data.message || 'Invalid credentials')
       }
     } catch (err) {
-      console.error(err)
-      setError('An error occurred during login')
+      console.error(err) // logs the error
+      setError('an error occurred during login')
     } finally {
       setIsLoading(false)
     }
@@ -60,7 +60,7 @@ export default function AdminLoginPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Admin Login
+            Login to Eazydoc for Doctors
           </h2>
         </div>
         <form 

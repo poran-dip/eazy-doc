@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { CheckCircle } from "lucide-react"
-import Cookies from "js-cookie"
 import { useState, useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -27,7 +26,7 @@ interface AppointmentDetails {
 export default function ConfirmationPage({
   searchParams,
 }: {
-  searchParams: { doctor: string, appointment: string }
+  searchParams: { doctor?: string, appointment?: string }
 }) {
   const [appointmentDetails, setAppointmentDetails] = useState<AppointmentDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -37,6 +36,10 @@ export default function ConfirmationPage({
     async function fetchAppointmentDetails() {
       try {
         // Fetch appointment details
+        if (!searchParams.appointment) {
+          throw new Error('No appointment ID provided')
+        }
+
         const response = await fetch(`/api/appointments/${searchParams.appointment}`)
         if (!response.ok) {
           throw new Error('Failed to fetch appointment details')
@@ -46,10 +49,6 @@ export default function ConfirmationPage({
         setAppointmentDetails(data)
         setIsLoading(false)
 
-        // Clear cookies
-        Cookies.remove('patientId')
-        Cookies.remove('doctorId')
-        Cookies.remove('appointmentId')
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred')
         setIsLoading(false)

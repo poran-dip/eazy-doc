@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json(appointment, { status: 201 })
+<<<<<<< HEAD
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
@@ -78,6 +79,12 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ 
       error: 'Internal server error'
+=======
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'an unknown error occurred'
+    return NextResponse.json({ 
+      error: errorMessage 
+>>>>>>> 5a1d428 (build errors half fixed)
     }, { status: 500 })
   }
 }
@@ -94,6 +101,7 @@ export async function GET() {
       }
     })
     return NextResponse.json(appointments)
+<<<<<<< HEAD
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       return NextResponse.json({ 
@@ -103,6 +111,12 @@ export async function GET() {
     }
     return NextResponse.json({ 
       error: 'Internal server error'
+=======
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'an unknown error occurred'
+    return NextResponse.json({ 
+      error: errorMessage 
+>>>>>>> 5a1d428 (build errors half fixed)
     }, { status: 500 })
   }
 }

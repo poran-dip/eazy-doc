@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import Image from "next/image"
 import Link from "next/link"
-import Cookies from 'js-cookie'
 import { useRouter } from 'next/navigation'
 
 import Navbar from '@/components/navbar'
@@ -36,7 +35,7 @@ interface Doctor {
   appointments: Appointment[]
 }
 
-export function DoctorsList() {
+function DoctorsList() {
   const [doctors, setDoctors] = useState<Doctor[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -97,29 +96,21 @@ export function DoctorsList() {
   }, [doctors, searchTerm, selectedSpecialization])
 
   const handleBookAppointment = (doctorId: string) => {
-    try {
-      Cookies.set('selectedDoctorId', doctorId, { expires: 2/1440 }) // 2 minutes
-      router.push(`/book`)
-    } catch (error) {
-      toast.error('Failed to start booking process. Please try again.')
-    }
+    localStorage.setItem('doctorIdToBook', doctorId);
+    router.push(`/book`)
   }
 
-  const getStatusColor = (status: Doctor['status']): string => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'AVAILABLE':
-        return 'bg-green-50 text-green-700 border-green-200'
-      case 'ON_DUTY':
-        return 'bg-blue-50 text-blue-700 border-blue-200'
-      case 'OFF_DUTY':
-        return 'bg-gray-50 text-gray-700 border-gray-200'
-      case 'UNAVAILABLE':
-        return 'bg-red-50 text-red-700 border-red-200'
+      case "AVAILABLE":
+        return "bg-green-500";
+      case "ON_DUTY":
+        return "bg-yellow-500";
       default:
-        return 'bg-gray-50 text-gray-700 border-gray-200'
+        return "bg-red-500";
     }
-  }
-
+  };
+  
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-10">

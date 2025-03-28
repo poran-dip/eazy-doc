@@ -19,6 +19,11 @@ interface Doctor {
   location: string;
   status: string;
   reviews: number;
+  appointments: Appointment[]
+}
+
+interface Appointment {
+  [key: string]: unknown;
 }
 
 export default function FeaturedDoctors() {
@@ -39,7 +44,7 @@ export default function FeaturedDoctors() {
         const fetchedDoctors = await response.json()
 
         // Take first 4 doctors and map to desired format
-        const formattedDoctors = fetchedDoctors.slice(0, 4).map((doctor: any) => ({
+        const formattedDoctors = fetchedDoctors.slice(0, 4).map((doctor: Doctor) => ({
           id: doctor.id,
           name: doctor.name || 'Unnamed Doctor',
           specialization: doctor.specialization,

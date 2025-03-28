@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Navbar from '@/components/navbar';
 import { Card } from '@/components/ui/card';
+import Image from 'next/image';
 
 interface TeamMember {
   name: string;
@@ -106,6 +107,7 @@ export default function AboutUsPage() {
           <div className="grid md:grid-cols-2 gap-6">
             {teamMembers.map((member, index) => (
               <Card key={index} className="flex items-center p-6 group hover:bg-gray-50 transition-colors duration-300">
+<<<<<<< HEAD
                 <div className="flex-shrink-0 mr-6 relative w-24 h-24">
                   <Image 
                     src={member.image}
@@ -114,6 +116,18 @@ export default function AboutUsPage() {
                     className="rounded-full border-2 border-primary shadow-sm object-cover
                              transform group-hover:scale-105 transition-transform duration-300"
                   />
+=======
+                <div className="flex-shrink-0 mr-6">
+                <Image 
+                  src={member.image} 
+                  alt={member.name} 
+                  width={96} // set an explicit width
+                  height={96} // set an explicit height
+                  className="w-24 h-24 rounded-full border-2 border-primary shadow-sm 
+                            transform group-hover:scale-115 transition-transform duration-300"
+                  priority // optional, use for images above the fold
+                />
+>>>>>>> 5a1d428 (build errors half fixed)
                 </div>
                 <div className="flex-grow">
                   <h3 className="text-xl font-bold mb-1">{member.name}</h3>

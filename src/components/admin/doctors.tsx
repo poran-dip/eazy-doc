@@ -17,7 +17,6 @@ import {
   DialogFooter, 
   DialogHeader, 
   DialogTitle, 
-  DialogTrigger, 
   DialogClose 
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -31,7 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, Pencil, Trash2, Plus, Calendar, Loader2 } from 'lucide-react';
+import { Search, Pencil, Trash2, Plus, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -41,7 +40,15 @@ interface Doctor {
   specialization: string;
   appointments?: Array<Appointment>;
   appointmentCount?: number;
-  user: any;
+  name: string;
+  email: string;
+}
+
+interface DoctorRequest {
+  name: string;
+  email: string;
+  specialization: string;
+  password?: string;
 }
 
 interface Appointment {
@@ -58,11 +65,6 @@ interface Appointment {
   };
 }
 
-interface Patient {
-  id: string;
-  name: string;
-}
-
 interface AppointmentViewProps {
   doctor: Doctor;
 }
@@ -73,7 +75,7 @@ const AppointmentView: React.FC<AppointmentViewProps> = ({ doctor }) => {
 
   return (
     <div className="p-4">
-      <h2 className="text-xl font-semibold mb-4">Appointments for {doctor.user.name}</h2>
+      <h2 className="text-xl font-semibold mb-4">Appointments for {doctor.name}</h2>
       
       {appointments.length === 0 ? (
         <div className="bg-gray-50 p-4 rounded-md text-center">
@@ -183,8 +185,8 @@ const AdminDoctors: React.FC = () => {
       setFilteredDoctors(doctors);
     } else {
       const filtered = doctors.filter(doctor => 
-        doctor.user.name.toLowerCase().includes(term) || 
-        doctor.user.email.toLowerCase().includes(term) ||
+        doctor.name.toLowerCase().includes(term) || 
+        doctor.email.toLowerCase().includes(term) ||
         doctor.specialization.toLowerCase().includes(term)
       );
       setFilteredDoctors(filtered);
@@ -248,8 +250,8 @@ const AdminDoctors: React.FC = () => {
   // Edit doctor
   const handleEditDoctor = (doctor: Doctor) => {
     setCurrentDoctor(doctor);
-    setFormName(doctor.user.name);
-    setFormEmail(doctor.user.email);
+    setFormName(doctor.name);
+    setFormEmail(doctor.email);
     setFormPassword(''); // Don't populate password for security
     setFormSpecialization(doctor.specialization);
     setIsEditDialogOpen(true);
@@ -266,7 +268,7 @@ const AdminDoctors: React.FC = () => {
     
     setIsSubmitting(true);
     try {
-      const requestBody: any = {
+      const requestBody: DoctorRequest = {
         name: formName,
         email: formEmail,
         specialization: formSpecialization,
@@ -401,8 +403,8 @@ const AdminDoctors: React.FC = () => {
             ) : (
               filteredDoctors.map((doctor) => (
                 <TableRow key={doctor.id}>
-                  <TableCell className="font-medium">{doctor.user.name}</TableCell>
-                  <TableCell>{doctor.user.email}</TableCell>
+                  <TableCell className="font-medium">{doctor.name}</TableCell>
+                  <TableCell>{doctor.email}</TableCell>
                   <TableCell>{doctor.specialization}</TableCell>
                   <TableCell>{doctor.appointmentCount || 0}</TableCell>
                   <TableCell className="text-right">
@@ -444,14 +446,14 @@ const AdminDoctors: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Add New Doctor</DialogTitle>
             <DialogDescription>
-              Enter the doctor's details below
+              Enter the doctor&apos;s details below
             </DialogDescription>
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">
-                Name
+                Name&apos;s Field
               </Label>
               <Input
                 id="name"
@@ -521,14 +523,14 @@ const AdminDoctors: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Edit Doctor</DialogTitle>
             <DialogDescription>
-              Update the doctor's details below
+              Update the doctor&apos;s details below
             </DialogDescription>
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-name" className="text-right">
-                Name
+                Name&apos;s Field
               </Label>
               <Input
                 id="edit-name"
@@ -599,7 +601,7 @@ const AdminDoctors: React.FC = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete {currentDoctor?.user.name}'s record and might affect appointments.
+              This will permanently delete {currentDoctor?.name}&apos;s record and might affect appointments.
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -620,9 +622,9 @@ const AdminDoctors: React.FC = () => {
       <Dialog open={isAppointmentDialogOpen} onOpenChange={setIsAppointmentDialogOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Doctor's Appointments</DialogTitle>
+            <DialogTitle>Doctor&apos;s Appointments</DialogTitle>
             <DialogDescription>
-              Viewing all appointments for {currentDoctor?.user.name}
+              Viewing all appointments for {currentDoctor?.name}
             </DialogDescription>
           </DialogHeader>
           

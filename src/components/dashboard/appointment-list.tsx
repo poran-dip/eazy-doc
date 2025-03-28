@@ -145,7 +145,7 @@ export default function AppointmentsList() {
                 <CalendarIcon className="h-10 w-10 text-muted-foreground mb-4" />
                 <p className="text-lg font-medium">No upcoming appointments</p>
                 <p className="text-sm text-muted-foreground mb-4">
-                  You don't have any upcoming appointments scheduled.
+                  You don&apos;t have any upcoming appointments scheduled.
                 </p>
                 <Button>Book an Appointment</Button>
               </CardContent>
@@ -215,7 +215,7 @@ export default function AppointmentsList() {
               <CardContent className="flex flex-col items-center justify-center py-10">
                 <CalendarIcon className="h-10 w-10 text-muted-foreground mb-4" />
                 <p className="text-lg font-medium">No past appointments</p>
-                <p className="text-sm text-muted-foreground">You don't have any past appointments.</p>
+                <p className="text-sm text-muted-foreground">You don&apos;t have any past appointments.</p>
               </CardContent>
             </Card>
           ) : (

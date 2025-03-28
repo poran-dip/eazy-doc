@@ -44,12 +44,7 @@ enum AppointmentStatus {
 
   interface DocHomeProps {
     doctorId: string;
-    doctorDetails?: any;
-  }
-
-  interface ApiError {
-    message: string;
-    statusCode: number;
+    doctorDetails?: Doctor;
   }
 
   const DocHome: React.FC<DocHomeProps> = ({ doctorId }) => {
@@ -160,12 +155,12 @@ enum AppointmentStatus {
                 
             {workingHours === "Day off" ? (
                 <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-blue-800 font-medium">It's your day off today. Enjoy your rest!</p>
+                    <p className="text-blue-800 font-medium">It&apos;s your day off today. Enjoy your rest!</p>
                 </div>
             ) : (
                 <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-blue-800 font-medium">
-                        Today's working hours: {workingHours}
+                        Today&apos;s working hours: {workingHours}
                     </p>
                 </div>
             )}
@@ -173,7 +168,7 @@ enum AppointmentStatus {
             {/* Stats overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="p-4">
-                    <h4 className="text-sm font-medium text-slate-500">Today's Appointments</h4>
+                    <h4 className="text-sm font-medium text-slate-500">Today&apos;s Appointments</h4>
                     {isLoading ? (
                         <p className="text-3xl font-bold mt-2">...</p>
                     ) : (
@@ -203,7 +198,7 @@ enum AppointmentStatus {
             {/* Today's appointments */}
             <Card className="p-6">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold">Today's Appointments</h3>
+                    <h3 className="text-xl font-bold">Today&apos;s Appointments</h3>
                     <Link href="/docs/all-appointments">
                         <Button variant="outline" size="sm">View All</Button>
                     </Link>
@@ -219,7 +214,7 @@ enum AppointmentStatus {
                     </div>
                 ) : workingHours === "Day off" ? (
                     <div className="p-10 text-center">
-                        <p className="text-xl font-semibold text-slate-600">It's your day off!</p>
+                        <p className="text-xl font-semibold text-slate-600">It&apos;s your day off!</p>
                         <p className="text-slate-500 mt-2">Time to relax and recharge.</p>
                     </div>
                 ) : todayAppointments.length === 0 ? (

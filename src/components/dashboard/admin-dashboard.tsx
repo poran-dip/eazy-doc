@@ -3,28 +3,23 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { 
-  Calendar, 
-  ClipboardList, 
   Home, 
-  LayoutDashboard, 
-  LogOut, 
   Menu, 
-  Settings, 
   User,
-  Stethoscope,
-  Shield
+  UserPlus,
+  Calendar,
+  Truck,
+  LogOut
 } from "lucide-react"
 import InitialAvatar from "@/components/initial-avatar"
-import { useAuth } from "@/context/auth-context"
 
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -33,57 +28,42 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 
-const getNavigation = (role: string | null) => {
-  switch (role) {
-    case 'patient':
-      return [
-        { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-        { name: "Appointments", href: "/dashboard/appointments", icon: Calendar },
-        { name: "Lab Results", href: "/dashboard/lab-results", icon: ClipboardList },
-        { name: "Profile", href: "/dashboard/profile", icon: User },
-        { name: "Settings", href: "/dashboard/settings", icon: Settings },
-      ]
-    case 'doctor':
-      return [
-        { name: "Dashboard", href: "/docs", icon: LayoutDashboard },
-        { name: "Appointments", href: "/docs/appointments", icon: Calendar },
-        { name: "Status", href: "/docs/status", icon: User },
-        { name: "Settings", href: "/docs/settings", icon: Settings },
-      ]
-    case 'admin':
-      return [
-        { name: "Patients", href: "/admin/patients", icon: LayoutDashboard },
-        { name: "Doctors", href: "/admin/doctors", icon: Shield },
-        { name: "Appointments", href: "/admin/appointments", icon: ClipboardList },
-        { name: "Ambulances", href: "/admin/ambulances", icon: Settings },
-      ]
-    default:
-      return []
-  }
-}
-
-interface DashboardLayoutProps {
+interface AdminDashboardLayoutProps {
   children: React.ReactNode
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function AdminDashboardLayout({ children }: AdminDashboardLayoutProps) {
   const pathname = usePathname()
-  const { user, role, logout } = useAuth()
   const [isMounted, setIsMounted] = useState(false)
+  const router = useRouter()
 
+  // Prevent hydration errors by only rendering client components after mount
   useEffect(() => {
     setIsMounted(true)
   }, [])
+
+  const handleSignOut = () => {
+    localStorage.removeItem('isLoggedIn')
+    localStorage.removeItem('adminId')
+    localStorage.removeItem('role')
+
+    router.push('/')
+  }
 
   if (!isMounted) {
     return null
   }
 
-  const navigation = getNavigation(role)
+  const navigation = [
+    { name: "Patients", href: "/admin/patients", icon: User },
+    { name: "Doctors", href: "/admin/doctors", icon: UserPlus },
+    { name: "Appointments", href: "/admin/appointments", icon: Calendar },
+    { name: "Ambulances", href: "/admin/ambulances", icon: Truck },
+  ]
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full ">
+      <div className="flex min-h-screen w-full">
         {/* Mobile sidebar */}
         <Sheet>
           <SheetTrigger asChild>
@@ -100,7 +80,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex h-full flex-col">
               <div className="p-3 sm:p-4 border-b">
                 <Link href="/" className="flex items-center gap-1 sm:gap-2 font-semibold text-sm sm:text-base">
-                  Eazydoc
+                  Eazydoc Admin Portal
                 </Link>
               </div>
               <nav className="flex-1 overflow-auto p-3 sm:p-4">
@@ -120,14 +100,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   ))}
                 </ul>
               </nav>
-              <div className="border-t p-3 sm:p-4">
-                <button
-                  onClick={logout}
-                  className="flex items-center gap-2 sm:gap-3 rounded-md px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium hover:bg-muted w-full text-left"
+              <div className="p-3 sm:p-4 border-t">
+                <Button 
+                  variant="destructive" 
+                  className="w-full"
+                  onClick={handleSignOut}
                 >
-                  <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <LogOut className="mr-2 h-4 w-4" />
                   Sign Out
-                </button>
+                </Button>
               </div>
             </div>
           </SheetContent>
@@ -137,7 +118,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <Sidebar className="hidden md:flex">
           <SidebarHeader className="border-b p-3 sm:p-4">
             <Link href="/" className="flex items-center gap-1 sm:gap-2 font-semibold text-sm sm:text-base">
-              Eazydoc
+              Eazydoc Admin Portal
             </Link>
           </SidebarHeader>
           <SidebarContent>
@@ -154,18 +135,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               ))}
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter className="border-t p-3 sm:p-4">
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <button onClick={logout} className="w-full text-left">
-                    <LogOut />
-                    <span>Sign Out</span>
-                  </button>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarFooter>
+          <div className="p-3 sm:p-4 border-t mt-auto">
+            <Button 
+              variant="destructive" 
+              className="w-full"
+              onClick={handleSignOut}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
         </Sidebar>
 
         {/* Main content */}
@@ -184,11 +163,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
                   <span className="relative flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 overflow-hidden rounded-full">
-                    <InitialAvatar 
-                      name={user?.name?.[0] || 'U'} 
-                      size={36} 
-                      fontSize={16} 
-                    />
+                    <InitialAvatar name="A" size={36} fontSize={16} />
                   </span>
                 </Button>
               </div>

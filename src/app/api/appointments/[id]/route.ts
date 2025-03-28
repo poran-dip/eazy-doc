@@ -22,10 +22,10 @@ type PrismaError = Prisma.PrismaClientKnownRequestError | Prisma.PrismaClientUnk
 
 export async function GET(
   req: NextRequest, 
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params;
 
     const appointment = await prisma.appointment.findUnique({
       where: { id },
@@ -45,6 +45,7 @@ export async function GET(
     }
 
     return NextResponse.json(appointment)
+<<<<<<< HEAD
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       return NextResponse.json({ 
@@ -54,16 +55,22 @@ export async function GET(
     }
     return NextResponse.json({ 
       error: 'Internal server error' 
+=======
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'an unknown error occurred'
+    return NextResponse.json({ 
+      error: errorMessage 
+>>>>>>> 5a1d428 (build errors half fixed)
     }, { status: 500 })
   }
 }
 
 export async function PUT(
   req: NextRequest, 
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params;
     const body = await req.json()
 
     const validation = AppointmentUpdateSchema.safeParse(body)
@@ -98,6 +105,7 @@ export async function PUT(
     })
 
     return NextResponse.json(appointment)
+<<<<<<< HEAD
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2025') {
@@ -112,16 +120,22 @@ export async function PUT(
     }
     return NextResponse.json({ 
       error: 'Internal server error' 
+=======
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'an unknown error occurred'
+    return NextResponse.json({ 
+      error: errorMessage 
+>>>>>>> 5a1d428 (build errors half fixed)
     }, { status: 500 })
   }
 }
 
 export async function DELETE(
   req: NextRequest, 
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params;
 
     const relatedAppointments = await prisma.appointment.findMany({
       where: {
@@ -148,9 +162,10 @@ export async function DELETE(
       })
     })
 
-    return NextResponse.json({ 
+    return NextResponse.json<{ message: string }>({ 
       message: 'Appointment deleted successfully' 
     })
+<<<<<<< HEAD
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2025') {
@@ -165,6 +180,12 @@ export async function DELETE(
     }
     return NextResponse.json({ 
       error: 'Internal server error' 
+=======
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'an unknown error occurred'
+    return NextResponse.json({ 
+      error: errorMessage 
+>>>>>>> 5a1d428 (build errors half fixed)
     }, { status: 500 })
   }
 }

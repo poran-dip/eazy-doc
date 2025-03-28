@@ -72,6 +72,16 @@ async function main() {
         image: 'https://randomuser.me/api/portraits/women/4.jpg',
         location: 'Kolkata, WB',
         rating: 4.99
+      },
+      {
+        email: 'john@gmail.com',
+        password: await bcrypt.hash('kabyashree', 10),
+        name: 'Dr. John Kalita',
+        specialization: 'Neurology',
+        status: 'AVAILABLE',
+        image: 'https://randomuser.me/api/portraits/men/9.jpg',
+        location: 'Kolkata, WB',
+        rating: 4.99
       }
     ]
   })

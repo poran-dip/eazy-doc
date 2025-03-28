@@ -42,7 +42,7 @@ export default function MedbotPromo() {
           <div className="bg-blue-50 p-6 md:p-10 md:w-1/2 flex items-center justify-center">
             <div className="max-w-xs w-full">
               <div className="rounded-lg bg-white p-4 mb-4 shadow-sm">
-                <p className="text-sm text-gray-700">I've been having headaches and dizziness for the past week.</p>
+                <p className="text-sm text-gray-700">I&apos;ve been having headaches and dizziness for the past week.</p>
               </div>
               <div className="rounded-lg bg-black text-white p-4 mb-4 shadow-sm">
                 <p className="text-sm">

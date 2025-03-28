@@ -332,7 +332,7 @@ const DocAppointments = () => {
       )}
 
       {/* Following Week's Schedule */}
-      <h3 className="text-xl font-bold mb-6">This Week's Schedule</h3>
+      <h3 className="text-xl font-bold mb-6">This Week&apos;s Schedule</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
       {weekDates.map((day) => {
         const hasNewAppointments = countNewAppointments(day.fullDay) > 0;
@@ -399,7 +399,7 @@ const DocAppointments = () => {
           {/* Check if it's a day off or if there are patients */}
           {weeklyAppointments[selectedDay]?.workingHours === "Day off" ? (
             <div className="p-10 text-center">
-              <p className="text-xl font-semibold text-slate-600">It's your day off!</p>
+              <p className="text-xl font-semibold text-slate-600">It&apos;s your day off!</p>
               <p className="text-slate-500 mt-2">Time to relax and recharge.</p>
             </div>
           ) : !weeklyAppointments[selectedDay] || weeklyAppointments[selectedDay]?.listOfPatients.length === 0 ? (
@@ -459,7 +459,7 @@ const DocAppointments = () => {
                   <TabsTrigger value="info">Patient Info</TabsTrigger>
                   <TabsTrigger value="medical">Medical Records</TabsTrigger>
                   <TabsTrigger value="history">History</TabsTrigger>
-                  <TabsTrigger value="notes">Doctor's Notes</TabsTrigger>
+                  <TabsTrigger value="notes">Doctor&apos;s Notes</TabsTrigger>
                 </TabsList>
 
                 {/* Patient Info Tab */}
@@ -569,7 +569,7 @@ const DocAppointments = () => {
                   <h3 className="text-lg font-semibold mb-3">Private Notes</h3>
                   <div className="space-y-4">
                     <p className="text-sm text-slate-600">
-                      These notes are for your reference only and won't be shared with the patient.
+                      These notes are for your reference only and won&apos;t be shared with the patient.
                     </p>
                     <Textarea 
                       placeholder="Enter your private notes about this patient..."

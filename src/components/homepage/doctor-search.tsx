@@ -18,11 +18,15 @@ import { Badge } from "@/components/ui/badge"
 interface DoctorResult {
   id: string
   name: string | null
-  specialty: string
+  specialization: string
   image: string | null
   rating: number
   location: string | null
-  appointments: any[]
+  appointments: Appointment[]
+}
+
+interface Appointment {
+  [key: string]: unknown;
 }
 
 export default function DoctorSearch() {
@@ -54,7 +58,7 @@ export default function DoctorSearch() {
       const doctors = await response.json()
 
       // Transform doctors into search results
-      const results: DoctorResult[] = doctors.map((doctor: any) => ({
+      const results: DoctorResult[] = doctors.map((doctor: DoctorResult) => ({
         id: doctor.id,
         name: doctor.name,
         specialty: doctor.specialization,
@@ -178,7 +182,7 @@ export default function DoctorSearch() {
                     <div className="flex-1 space-y-2">
                       <div>
                         <h4 className="text-lg font-semibold">{doctor.name}</h4>
-                        <p className="text-sm text-muted-foreground">{doctor.specialty}</p>
+                        <p className="text-sm text-muted-foreground">{doctor.specialization}</p>
                       </div>
                       <div className="flex items-center">
                         <div className="flex text-yellow-400">
@@ -206,7 +210,7 @@ export default function DoctorSearch() {
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <Badge variant="outline" className="text-xs">
-                          Specialty: {doctor.specialty}
+                          Specialty: {doctor.specialization}
                         </Badge>
                         {doctor.location && (
                           <Badge variant="outline" className="text-xs">

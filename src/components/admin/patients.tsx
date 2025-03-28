@@ -10,16 +10,13 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
   Dialog, 
   DialogContent, 
   DialogDescription, 
   DialogFooter, 
   DialogHeader, 
-  DialogTitle, 
-  DialogTrigger, 
+  DialogTitle,  
   DialogClose 
 } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -34,15 +31,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, Pencil, Trash2, Plus, Calendar as CalendarIcon, Eye, Loader2 } from 'lucide-react';
+import { Search, Pencil, Trash2, Plus, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from "sonner";
 import Link from 'next/link';
 
+interface UpdatedData {
+  name: string;
+  email: string;
+  gender?: string | null;
+  age?: number | null;
+  password?: string;
+}
+
 // Define types based on Prisma schema
 interface Patient {
   id: string;
-  user: any;
+  name: string;
+  email: string;
   age?: number | null;
   gender?: string | null;
   appointments?: Appointment[];
@@ -71,7 +77,7 @@ interface AppointmentViewProps {
 }
 
 // Appointment view component
-const AppointmentView: React.FC<AppointmentViewProps> = ({ patientId, patientName, appointments, isLoading }) => {
+const AppointmentView: React.FC<AppointmentViewProps> = ({ patientName, appointments, isLoading }) => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-8">
@@ -180,8 +186,8 @@ const AdminPatients: React.FC = () => {
       setFilteredPatients(patients);
     } else {
       const filtered = patients.filter(patient => 
-        patient.user.name.toLowerCase().includes(term) || 
-        patient.user.email.toLowerCase().includes(term)
+        patient.name.toLowerCase().includes(term) || 
+        patient.email.toLowerCase().includes(term)
       );
       setFilteredPatients(filtered);
     }
@@ -252,8 +258,8 @@ const AdminPatients: React.FC = () => {
   // Edit patient
   const handleEditPatient = (patient: Patient) => {
     setCurrentPatient(patient);
-    setFormName(patient.user.name);
-    setFormEmail(patient.user.email);
+    setFormName(patient.name);
+    setFormEmail(patient.email);
     setFormPassword(''); // Don't populate password for security
     setFormGender(patient.gender || '');
     setFormAge(patient.age?.toString() || '');
@@ -272,7 +278,7 @@ const AdminPatients: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      const updatedData: any = {
+      const updatedData: UpdatedData = {
         name: formName,
         email: formEmail,
         gender: formGender || null,
@@ -442,8 +448,8 @@ const AdminPatients: React.FC = () => {
             ) : (
               filteredPatients.map((patient) => (
                 <TableRow key={patient.id}>
-                  <TableCell className="font-medium">{patient.user.name}</TableCell>
-                  <TableCell>{patient.user.email}</TableCell>
+                  <TableCell className="font-medium">{patient.name}</TableCell>
+                  <TableCell>{patient.email}</TableCell>
                   <TableCell>{patient.age || '-'}</TableCell>
                   <TableCell>{patient.gender || '-'}</TableCell>
                   <TableCell className="text-right">
@@ -700,7 +706,7 @@ const AdminPatients: React.FC = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete {currentPatient?.user.name}'s record and all associated data.
+              This will permanently delete {currentPatient?.name}&apos;s record and all associated data.
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -728,7 +734,7 @@ const AdminPatients: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Patient Appointments</DialogTitle>
             <DialogDescription>
-              Viewing all appointments for {currentPatient?.user.name}
+              Viewing all appointments for {currentPatient?.name}
             </DialogDescription>
           </DialogHeader>
           
@@ -736,7 +742,7 @@ const AdminPatients: React.FC = () => {
             <div className="py-2">
               <AppointmentView 
                 patientId={currentPatient.id}
-                patientName={currentPatient.user.name}
+                patientName={currentPatient.name}
                 appointments={patientAppointments}
                 isLoading={isLoadingAppointments}
               />

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Cookies from "js-cookie"
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
@@ -28,7 +27,7 @@ import {
 } from "@/components/ui/popover"
 import { Clock } from "lucide-react"
 
-export default function PatientAppointmentRegistrationPage({ params }: { params: { doctorId: string } }) {
+export default function PatientAppointmentRegistrationPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
     firstName: "",
@@ -50,14 +49,14 @@ export default function PatientAppointmentRegistrationPage({ params }: { params:
 
   useEffect(() => {
     // Check if patient is already logged in
-    const existingPatientId = Cookies.get('patientId')
+    const existingPatientId = localStorage.getItem('patientId')
     if (existingPatientId) {
-      router.push('/dashboard/appointments/book')
+      router.push('/dashboard/appointments')
       return
     }
 
     // Check for doctor cookie when component mounts
-    const doctorId = Cookies.get('selectedDoctorId')
+    const doctorId = localStorage.getItem('doctorIdToBook')
 
     // If no doctor cookie, redirect back to doctor search
     if (!doctorId) {
@@ -171,7 +170,7 @@ export default function PatientAppointmentRegistrationPage({ params }: { params:
         },
         body: JSON.stringify({
           patientId: patient.id,
-          doctorId: Cookies.get('selectedDoctorId'),
+          doctorId: localStorage.getItem('doctorIdToBook'),
           specialization: formData.specialization,
           condition: formData.condition,
           description: formData.description,
@@ -186,19 +185,16 @@ export default function PatientAppointmentRegistrationPage({ params }: { params:
       }
 
       const appointment = await appointmentResponse.json()
-
-      // Store patient ID in HTTP-only cookie for 30 days
-      Cookies.set('patientId', patient.id, { expires: 30 }) 
       
       // Store patient details in localStorage for login
       localStorage.setItem('patientId', patient.id)
       localStorage.setItem('patientEmail', patient.email)
 
       // Redirect to confirmation page
-      router.push(`/book/confirmation?doctor=${Cookies.get('selectedDoctorId')}&appointment=${appointment.id}`)
-    } catch (error: any) {
-      console.error('Registration and booking error:', error)
-      setError(error.message)
+      router.push(`/book/confirmation?appointment=${appointment.id}`)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'an unknown error occurred'
+      setError(errorMessage)
       setIsSubmitting(false)
     }
   }
@@ -332,8 +328,6 @@ export default function PatientAppointmentRegistrationPage({ params }: { params:
                 />
               </div>
             </div>
-
-            
 
             <div>
               <Label>Specialization *</Label>

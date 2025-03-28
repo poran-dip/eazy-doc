@@ -1,15 +1,14 @@
 "use client"
 
-import { withRoleAccess } from "@/context/auth-context"
-import DashboardLayout from "@/components/dashboard/dashboard-layout"
+import PatientDashboardLayout from "@/components/dashboard/patient-dashboard"
 import LabResultsList from "@/components/dashboard/lab-results-list"
 
 function LabResultsPage() {
   return (
-    <DashboardLayout>
+    <PatientDashboardLayout>
       <LabResultsList />
-    </DashboardLayout>
+    </PatientDashboardLayout>
   )
 }
 
-export default withRoleAccess(LabResultsPage, ['patient'])
+export default LabResultsPage

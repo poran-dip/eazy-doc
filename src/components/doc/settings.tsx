@@ -9,11 +9,9 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bell, Shield, Clock, Smartphone, UserCog, Calendar, Monitor, ChevronRight } from 'lucide-react';
+import { Bell, Shield, UserCog, Calendar, Monitor, ChevronRight } from 'lucide-react';
 
 const DocSettings = () => {
-  const today = new Date().toLocaleString('en-us', { weekday: 'long' });
-
   // Working hours state
   const [schedule, setSchedule] = useState([
     { day: 'Monday', time: '3pm - 5pm', isWorking: true },

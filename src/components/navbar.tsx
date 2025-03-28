@@ -15,19 +15,9 @@ export default function Navbar() {
   const router = useRouter()
 
   useEffect(() => {
-    // Check for patient, doctor, or admin cookie
-    const checkLoginStatus = async () => {
-      try {
-        const response = await fetch('/api/auth/status')
-        const data = await response.json()
-        setIsLoggedIn(data.isLoggedIn)
-      } catch (error) {
-        console.error('Error checking login status:', error)
-      }
-    }
-
-    checkLoginStatus()
-  }, [])
+    const storedStatus = localStorage.getItem('isLoggedIn');
+    setIsLoggedIn(storedStatus === 'true');
+  }, []);
 
   const handleOpenApp = () => {
     router.push('/dashboard')
@@ -38,7 +28,7 @@ export default function Navbar() {
       <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center text-lg font-semibold">
-            <img src="/logo.png" alt="Eazydoc Logo" className="h-8 w-auto mr-2 object-contain" />
+            <img src="/logo.jpg" alt="Eazydoc Logo" className="h-8 w-auto mr-2 object-contain" />
             <span className="font-bold">Eazydoc</span>
           </Link>
         </div>
@@ -58,13 +48,13 @@ export default function Navbar() {
                 <Link href="/about" className="hover:text-foreground/80">
                   About Us
                 </Link>
-                <Link href="/docs" className="hover:text-foreground/80">
+                <Link href="/docs/login" className="hover:text-foreground/80">
                   For Doctors
                 </Link>
                 <Link href="/ambulances" className="hover:text-foreground/80">
                   For Ambulances
                 </Link>
-                <Link href="/admin" className="hover:text-foreground/80">
+                <Link href="/admin/login" className="hover:text-foreground/80">
                   For Admins
                 </Link>
               </nav>
@@ -77,13 +67,13 @@ export default function Navbar() {
             <Link href="/about" className="text-sm font-medium hover:text-foreground/80">
               About Us
             </Link>
-            <Link href="/docs" className="text-sm font-medium hover:text-foreground/80">
+            <Link href="/docs/login" className="text-sm font-medium hover:text-foreground/80">
               For Doctors
             </Link>
             <Link href="/ambulances" className="text-sm font-medium hover:text-foreground/80">
               For Ambulances
             </Link>
-            <Link href="/admin" className="text-sm font-medium hover:text-foreground/80">
+            <Link href="/admin/login" className="text-sm font-medium hover:text-foreground/80">
               For Admins
             </Link>
           </nav>
