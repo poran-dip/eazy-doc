@@ -1,7 +1,7 @@
-// app/api/doctors/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 // Doctor Update Schema
 const DoctorUpdateSchema = z.object({
@@ -11,6 +11,8 @@ const DoctorUpdateSchema = z.object({
   status: z.enum(['AVAILABLE', 'ON_DUTY', 'OFF_DUTY', 'UNAVAILABLE']).optional(),
   rating: z.number().optional()
 })
+
+type PrismaError = Prisma.PrismaClientKnownRequestError | Prisma.PrismaClientUnknownRequestError
 
 export async function GET(
   req: NextRequest, 
@@ -41,9 +43,15 @@ export async function GET(
     }
 
     return NextResponse.json(doctor)
-  } catch (error: any) {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json({ 
+        error: `Database error: ${error.message}`,
+        code: error.code
+      }, { status: 400 })
+    }
     return NextResponse.json({ 
-      error: error.message 
+      error: 'Internal server error' 
     }, { status: 500 })
   }
 }
@@ -65,13 +73,24 @@ export async function PUT(
 
     const doctor = await prisma.doctor.update({
       where: { id },
-      data: body
+      data: validation.data
     })
 
     return NextResponse.json(doctor)
-  } catch (error: any) {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json({ 
+          error: 'Doctor not found' 
+        }, { status: 404 })
+      }
+      return NextResponse.json({ 
+        error: `Database error: ${error.message}`,
+        code: error.code
+      }, { status: 400 })
+    }
     return NextResponse.json({ 
-      error: error.message 
+      error: 'Internal server error' 
     }, { status: 500 })
   }
 }
@@ -83,21 +102,37 @@ export async function DELETE(
   try {
     const { id } = params
 
-    await prisma.appointment.updateMany({
-      where: { doctorId: id },
-      data: { doctorId: null }
-    })
+    // Use transaction to ensure data consistency
+    await prisma.$transaction(async (tx) => {
+      // First update appointments
+      await tx.appointment.updateMany({
+        where: { doctorId: id },
+        data: { doctorId: null }
+      })
 
-    await prisma.doctor.delete({
-      where: { id }
+      // Then delete the doctor
+      await tx.doctor.delete({
+        where: { id }
+      })
     })
 
     return NextResponse.json({ 
       message: 'Doctor deleted successfully. Associated appointments updated.' 
     })
-  } catch (error: any) {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json({ 
+          error: 'Doctor not found' 
+        }, { status: 404 })
+      }
+      return NextResponse.json({ 
+        error: `Database error: ${error.message}`,
+        code: error.code
+      }, { status: 400 })
+    }
     return NextResponse.json({ 
-      error: error.message 
+      error: 'Internal server error' 
     }, { status: 500 })
   }
 }

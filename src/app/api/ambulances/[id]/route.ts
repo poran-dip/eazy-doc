@@ -1,7 +1,7 @@
-// app/api/ambulances/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 // Ambulance Update Schema
 const AmbulanceUpdateSchema = z.object({
@@ -10,6 +10,8 @@ const AmbulanceUpdateSchema = z.object({
   status: z.enum(['AVAILABLE', 'ON_DUTY', 'OFF_DUTY', 'UNAVAILABLE']).optional(),
   rating: z.number().optional()
 })
+
+type PrismaError = Prisma.PrismaClientKnownRequestError | Prisma.PrismaClientUnknownRequestError
 
 export async function GET(
   req: NextRequest, 
@@ -40,9 +42,15 @@ export async function GET(
     }
 
     return NextResponse.json(ambulance)
-  } catch (error: any) {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json({ 
+        error: `Database error: ${error.message}`,
+        code: error.code
+      }, { status: 400 })
+    }
     return NextResponse.json({ 
-      error: error.message 
+      error: 'Internal server error' 
     }, { status: 500 })
   }
 }
@@ -68,9 +76,20 @@ export async function PUT(
     })
 
     return NextResponse.json(ambulance)
-  } catch (error: any) {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json({ 
+          error: 'Ambulance not found' 
+        }, { status: 404 })
+      }
+      return NextResponse.json({ 
+        error: `Database error: ${error.message}`,
+        code: error.code
+      }, { status: 400 })
+    }
     return NextResponse.json({ 
-      error: error.message 
+      error: 'Internal server error' 
     }, { status: 500 })
   }
 }
@@ -94,9 +113,20 @@ export async function DELETE(
     return NextResponse.json({ 
       message: 'Ambulance deleted successfully. Associated appointments updated.' 
     })
-  } catch (error: any) {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json({ 
+          error: 'Ambulance not found' 
+        }, { status: 404 })
+      }
+      return NextResponse.json({ 
+        error: `Database error: ${error.message}`,
+        code: error.code
+      }, { status: 400 })
+    }
     return NextResponse.json({ 
-      error: error.message 
+      error: 'Internal server error' 
     }, { status: 500 })
   }
 }

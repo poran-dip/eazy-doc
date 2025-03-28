@@ -1,9 +1,8 @@
-// app/api/patients/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
-import { cookies } from 'next/headers'
+import { Prisma } from '@prisma/client'
 
 // Patient Validation Schema
 const PatientSchema = z.object({
@@ -14,6 +13,8 @@ const PatientSchema = z.object({
   age: z.number().optional(),
   gender: z.string().optional()
 })
+
+type PrismaError = Prisma.PrismaClientKnownRequestError | Prisma.PrismaClientUnknownRequestError
 
 export async function POST(req: NextRequest) {
   try {
@@ -41,21 +42,35 @@ export async function POST(req: NextRequest) {
 
     const patient = await prisma.patient.create({
       data: {
-        ...body,
+        ...validation.data,
         password: hashedPassword
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        age: true,
+        gender: true,
+        image: true,
+        // createdAt: true, // Removed as it does not exist in PatientSelect
+        // updatedAt: true // Removed as it does not exist in PatientSelect
       }
     })
 
     return NextResponse.json(patient, { status: 201 })
-  } catch (error: any) {
-    console.error('Patient registration error:', error)
-
-    if (error.code === 'P2002') {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return NextResponse.json({ 
+          error: 'A patient with this email already exists' 
+        }, { status: 409 })
+      }
       return NextResponse.json({ 
-        error: 'A patient with this email already exists' 
-      }, { status: 409 })
+        error: `Database error: ${error.message}`,
+        code: error.code
+      }, { status: 400 })
     }
-
+    console.error('Patient registration error:', error)
     return NextResponse.json({ 
       error: 'Unable to complete registration. Please try again later.' 
     }, { status: 500 })
@@ -71,20 +86,33 @@ export async function GET() {
         name: true,
         age: true,
         gender: true,
+        image: true,
         appointments: {
           include: {
-            doctor: true,
+            doctor: {
+              select: {
+                id: true,
+                name: true,
+                specialization: true
+              }
+            }
           },
           orderBy: {
-            dateTime: 'asc',
-          },
-        },
-      },
+            dateTime: 'asc'
+          }
+        }
+      }
     })
     return NextResponse.json(patients)
-  } catch (error: any) {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json({ 
+        error: `Database error: ${error.message}`,
+        code: error.code
+      }, { status: 400 })
+    }
     return NextResponse.json({ 
-      error: error.message 
+      error: 'Failed to fetch patients' 
     }, { status: 500 })
   }
 }

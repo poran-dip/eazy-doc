@@ -1,7 +1,7 @@
-// app/api/appointments/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 // Appointment Update Schema
 const AppointmentUpdateSchema = z.object({
@@ -17,6 +17,8 @@ const AppointmentUpdateSchema = z.object({
   tests: z.array(z.string()).optional(),
   relatedAppointmentId: z.string().optional()
 })
+
+type PrismaError = Prisma.PrismaClientKnownRequestError | Prisma.PrismaClientUnknownRequestError
 
 export async function GET(
   req: NextRequest, 
@@ -43,9 +45,15 @@ export async function GET(
     }
 
     return NextResponse.json(appointment)
-  } catch (error: any) {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json({ 
+        error: `Database error: ${error.message}`,
+        code: error.code
+      }, { status: 400 })
+    }
     return NextResponse.json({ 
-      error: error.message 
+      error: 'Internal server error' 
     }, { status: 500 })
   }
 }
@@ -90,9 +98,20 @@ export async function PUT(
     })
 
     return NextResponse.json(appointment)
-  } catch (error: any) {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json({ 
+          error: 'Appointment not found' 
+        }, { status: 404 })
+      }
+      return NextResponse.json({ 
+        error: `Database error: ${error.message}`,
+        code: error.code
+      }, { status: 400 })
+    }
     return NextResponse.json({ 
-      error: error.message 
+      error: 'Internal server error' 
     }, { status: 500 })
   }
 }
@@ -111,27 +130,41 @@ export async function DELETE(
       select: { id: true },
     })
     
-    for (const related of relatedAppointments) {
-      await prisma.appointment.update({
-        where: { id: related.id },
-        data: {
-          relatedTo: {
-            disconnect: { id },
+    // Update related appointments in a transaction
+    await prisma.$transaction(async (tx) => {
+      for (const related of relatedAppointments) {
+        await tx.appointment.update({
+          where: { id: related.id },
+          data: {
+            relatedTo: {
+              disconnect: { id },
+            },
           },
-        },
-      })
-    }
+        })
+      }
 
-    await prisma.appointment.delete({
-      where: { id }
+      await tx.appointment.delete({
+        where: { id }
+      })
     })
 
     return NextResponse.json({ 
       message: 'Appointment deleted successfully' 
     })
-  } catch (error: any) {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json({ 
+          error: 'Appointment not found' 
+        }, { status: 404 })
+      }
+      return NextResponse.json({ 
+        error: `Database error: ${error.message}`,
+        code: error.code
+      }, { status: 400 })
+    }
     return NextResponse.json({ 
-      error: error.message 
+      error: 'Internal server error' 
     }, { status: 500 })
   }
 }

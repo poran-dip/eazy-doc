@@ -1,7 +1,7 @@
-// app/api/patients/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 // Patient Update Schema
 const PatientUpdateSchema = z.object({
@@ -10,6 +10,8 @@ const PatientUpdateSchema = z.object({
   age: z.number().optional(),
   gender: z.string().optional()
 })
+
+type PrismaError = Prisma.PrismaClientKnownRequestError | Prisma.PrismaClientUnknownRequestError
 
 export async function GET(
   req: NextRequest, 
@@ -39,9 +41,15 @@ export async function GET(
     }
 
     return NextResponse.json(patient)
-  } catch (error: any) {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json({ 
+        error: `Database error: ${error.message}`,
+        code: error.code
+      }, { status: 400 })
+    }
     return NextResponse.json({ 
-      error: error.message 
+      error: 'Internal server error' 
     }, { status: 500 })
   }
 }
@@ -63,13 +71,34 @@ export async function PUT(
 
     const patient = await prisma.patient.update({
       where: { id },
-      data: body
+      data: validation.data,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        age: true,
+        gender: true,
+        image: true,
+        // createdAt: true,
+        // updatedAt: true
+      }
     })
 
     return NextResponse.json(patient)
-  } catch (error: any) {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json({ 
+          error: 'Patient not found' 
+        }, { status: 404 })
+      }
+      return NextResponse.json({ 
+        error: `Database error: ${error.message}`,
+        code: error.code
+      }, { status: 400 })
+    }
     return NextResponse.json({ 
-      error: error.message 
+      error: 'Internal server error' 
     }, { status: 500 })
   }
 }
@@ -81,20 +110,34 @@ export async function DELETE(
   try {
     const { id } = params
 
-    await prisma.appointment.deleteMany({
-      where: { patientId: id }
-    })
+    // Use transaction to ensure data consistency
+    await prisma.$transaction(async (tx) => {
+      await tx.appointment.deleteMany({
+        where: { patientId: id }
+      })
 
-    await prisma.patient.delete({
-      where: { id }
+      await tx.patient.delete({
+        where: { id }
+      })
     })
 
     return NextResponse.json({ 
       message: 'Patient and associated appointments deleted successfully' 
     })
-  } catch (error: any) {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return NextResponse.json({ 
+          error: 'Patient not found' 
+        }, { status: 404 })
+      }
+      return NextResponse.json({ 
+        error: `Database error: ${error.message}`,
+        code: error.code
+      }, { status: 400 })
+    }
     return NextResponse.json({ 
-      error: error.message 
+      error: 'Internal server error' 
     }, { status: 500 })
   }
 }

@@ -5,9 +5,11 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner"
 import { BackgroundBeams } from "@/components/ui/background-beams";
 import { AuroraBackground } from "@/components/ui/aurora_background";
-import AuthProvider from "@/components/providers/session-provider";
 
-const inter = Inter();
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "EZ Doc",
