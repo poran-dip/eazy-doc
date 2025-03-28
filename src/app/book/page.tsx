@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Cookies from "js-cookie"
 import { format } from "date-fns"
@@ -48,14 +48,22 @@ export default function PatientAppointmentRegistrationPage({ params }: { params:
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Check for doctor cookie when component mounts
-  const doctorId = Cookies.get('selectedDoctorId')
+  useEffect(() => {
+    // Check if patient is already logged in
+    const existingPatientId = Cookies.get('patientId')
+    if (existingPatientId) {
+      router.push('/dashboard/appointments/book')
+      return
+    }
 
-  // If no doctor cookie, redirect back to doctor search
-  if (!doctorId) {
-    router.push('/doctors')
-    return null
-  }
+    // Check for doctor cookie when component mounts
+    const doctorId = Cookies.get('selectedDoctorId')
+
+    // If no doctor cookie, redirect back to doctor search
+    if (!doctorId) {
+      router.push('/all-doctors')
+    }
+  }, [router])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -145,6 +153,11 @@ export default function PatientAppointmentRegistrationPage({ params }: { params:
 
       if (!patientResponse.ok) {
         const errorData = await patientResponse.json()
+        if (errorData.error === 'Email already in use') {
+          setError(errorData.error)
+          setIsSubmitting(false)
+          return
+        }
         throw new Error(errorData.error || 'Failed to create patient')
       }
 
@@ -158,7 +171,7 @@ export default function PatientAppointmentRegistrationPage({ params }: { params:
         },
         body: JSON.stringify({
           patientId: patient.id,
-          doctorId: doctorId,
+          doctorId: Cookies.get('selectedDoctorId'),
           specialization: formData.specialization,
           condition: formData.condition,
           description: formData.description,
@@ -174,17 +187,15 @@ export default function PatientAppointmentRegistrationPage({ params }: { params:
 
       const appointment = await appointmentResponse.json()
 
-      // Store patient, doctor, and appointment IDs in cookies and localStorage
-      Cookies.set('patientId', patient.id, { expires: 2/1440 }) // 2 minutes
-      Cookies.set('doctorId', doctorId, { expires: 2/1440 }) // 2 minutes
-      Cookies.set('appointmentId', appointment.id, { expires: 2/1440 }) // 2 minutes
+      // Store patient ID in HTTP-only cookie for 30 days
+      Cookies.set('patientId', patient.id, { expires: 30 }) 
       
       // Store patient details in localStorage for login
       localStorage.setItem('patientId', patient.id)
       localStorage.setItem('patientEmail', patient.email)
 
       // Redirect to confirmation page
-      router.push(`/book/confirmation?doctor=${doctorId}&appointment=${appointment.id}`)
+      router.push(`/book/confirmation?doctor=${Cookies.get('selectedDoctorId')}&appointment=${appointment.id}`)
     } catch (error: any) {
       console.error('Registration and booking error:', error)
       setError(error.message)
@@ -202,6 +213,10 @@ export default function PatientAppointmentRegistrationPage({ params }: { params:
     return slots
   }
 
+  const handleLoginRedirect = () => {
+    router.push('/login')
+  }
+
   return (
     <div className="container py-10 mx-auto max-w-2xl">
       <Card>
@@ -215,7 +230,20 @@ export default function PatientAppointmentRegistrationPage({ params }: { params:
           <CardContent className="space-y-4">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
-                {error}
+                {error === 'Email already in use' ? (
+                  <div className="flex justify-between items-center">
+                    <span>Email is already registered. Please log in.</span>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleLoginRedirect}
+                    >
+                      Go to Login
+                    </Button>
+                  </div>
+                ) : (
+                  error
+                )}
               </div>
             )}
 

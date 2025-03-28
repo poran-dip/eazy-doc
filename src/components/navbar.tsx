@@ -1,15 +1,37 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Menu } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import LoginDialog from "../components/login-dailog"
+import LoginDialog from "@/components/login-dialog"
 
 export default function Navbar() {
   const [showLoginDialog, setShowLoginDialog] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const router = useRouter()
+
+  useEffect(() => {
+    // Check for patient, doctor, or admin cookie
+    const checkLoginStatus = async () => {
+      try {
+        const response = await fetch('/api/auth/status')
+        const data = await response.json()
+        setIsLoggedIn(data.isLoggedIn)
+      } catch (error) {
+        console.error('Error checking login status:', error)
+      }
+    }
+
+    checkLoginStatus()
+  }, [])
+
+  const handleOpenApp = () => {
+    router.push('/dashboard')
+  }
 
   return (
     <header className="w-full border-b bg-white">
@@ -67,10 +89,13 @@ export default function Navbar() {
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setShowLoginDialog(true)}>
-            Login
-          </Button>
-          <Button className="hidden md:inline-flex">Sign Up</Button>
+          {isLoggedIn ? (
+            <Button onClick={handleOpenApp}>Open App</Button>
+          ) : (
+            <Button variant="outline" onClick={() => setShowLoginDialog(true)}>
+              Login
+            </Button>
+          )}
         </div>
       </div>
       <LoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />

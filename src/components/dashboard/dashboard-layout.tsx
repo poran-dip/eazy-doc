@@ -1,11 +1,12 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
 import { Calendar, ClipboardList, Home, LayoutDashboard, LogOut, Menu, Settings, User } from "lucide-react"
+import InitialAvatar from "@/components/initial-avatar"
 
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -27,12 +28,34 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const [isMounted, setIsMounted] = useState(false)
 
   // Prevent hydration errors by only rendering client components after mount
   useEffect(() => {
     setIsMounted(true)
   }, [])
+
+  const handleSignOut = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        // Redirect to home page after successful logout
+        router.push('/');
+      } else {
+        // Handle potential logout errors
+        console.error('Logout failed');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   if (!isMounted) {
     return null
@@ -65,7 +88,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex h-full flex-col">
               <div className="p-3 sm:p-4 border-b">
                 <Link href="/" className="flex items-center gap-1 sm:gap-2 font-semibold text-sm sm:text-base">
-                  Doctor Finder
+                  Eazydoc
                 </Link>
               </div>
               <nav className="flex-1 overflow-auto p-3 sm:p-4">
@@ -86,13 +109,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </ul>
               </nav>
               <div className="border-t p-3 sm:p-4">
-                <Link
-                  href="/"
-                  className="flex items-center gap-2 sm:gap-3 rounded-md px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium hover:bg-muted"
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 sm:gap-3 rounded-md px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium hover:bg-muted w-full text-left"
                 >
                   <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
                   Sign Out
-                </Link>
+                </button>
               </div>
             </div>
           </SheetContent>
@@ -102,7 +125,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <Sidebar className="hidden md:flex">
           <SidebarHeader className="border-b p-3 sm:p-4">
             <Link href="/" className="flex items-center gap-1 sm:gap-2 font-semibold text-sm sm:text-base">
-              Doctor Finder
+              Eazydoc
             </Link>
           </SidebarHeader>
           <SidebarContent>
@@ -123,10 +146,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link href="/">
+                  <button onClick={handleSignOut} className="w-full text-left">
                     <LogOut />
                     <span>Sign Out</span>
-                  </Link>
+                  </button>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -149,11 +172,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
                   <span className="relative flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 overflow-hidden rounded-full">
-                    <img
-                      className="aspect-square h-full w-full"
-                      src="/placeholder.svg?height=36&width=36"
-                      alt="Avatar"
-                    />
+                    <InitialAvatar name="P" size={36} fontSize={16} />
                   </span>
                 </Button>
               </div>
@@ -165,4 +184,3 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </SidebarProvider>
   )
 }
-

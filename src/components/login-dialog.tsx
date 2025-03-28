@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { signIn } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -40,8 +41,13 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
     age: undefined as number | undefined,
     gender: ''
   })
+  const [loginData, setLoginData] = useState({
+    email: '',
+    password: ''
+  })
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
   const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -59,6 +65,20 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
     e.preventDefault()
     setError('')
     setIsLoading(true)
+
+    // Check existing login status first
+    try {
+      const statusResponse = await fetch('/api/auth/status')
+      const statusData = await statusResponse.json()
+      
+      if (statusData.isLoggedIn) {
+        setError('You are already signed in. Please sign out first.')
+        setIsLoading(false)
+        return
+      }
+    } catch (error) {
+      console.error('Error checking login status:', error)
+    }
 
     if (registerData.password !== registerData.confirmPassword) {
       setError('Passwords do not match')
@@ -89,9 +109,30 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
         return
       }
 
-      // Switch to login tab after successful registration
-      setActiveTab('login')
-      setError('Registration successful. Please log in.')
+      // Automatically log in after successful registration
+      const loginResponse = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: registerData.email,
+          password: registerData.password,
+          role: 'patient'
+        })
+      })
+
+      const loginData = await loginResponse.json()
+
+      if (!loginResponse.ok) {
+        setError(loginData.error || 'Login failed after registration')
+        setIsLoading(false)
+        return
+      }
+
+      // Redirect to dashboard
+      onOpenChange(false)
+      router.push('/dashboard')
     } catch (error) {
       setError('An error occurred. Please try again.')
       console.error('Registration error:', error)
@@ -99,11 +140,6 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
       setIsLoading(false)
     }
   }
-
-  const [loginData, setLoginData] = useState({
-    email: '',
-    password: ''
-  })
 
   const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -116,54 +152,71 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
     setIsLoading(true)
 
     try {
-      // First, fetch all patients to validate credentials
-      const response = await fetch('/api/patients')
-      const patients = await response.json()
+      // First check existing login status
+      const statusResponse = await fetch('/api/auth/status')
+      const statusData = await statusResponse.json()
+      
+      if (statusData.isLoggedIn) {
+        // Determine the current logged-in role
+        const loggedInRole = statusData.role
+        
+        if (loggedInRole === 'doctor' || loggedInRole === 'admin') {
+          setError('You are already signed in as a doctor or admin. Please sign out first.')
+          setIsLoading(false)
+          return
+        }
+      }
 
-      // Find patient with matching email and verify password
-      const patient = patients.find((p: any) => p.email === loginData.email)
+      // Attempt login
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: loginData.email,
+          password: loginData.password,
+          role: 'patient'
+        })
+      })
 
-      if (!patient) {
-        setError('User not found')
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Invalid credentials')
         setIsLoading(false)
         return
       }
 
-      // Use NextAuth for credential login
-      const result = await signIn('credentials', {
-        redirect: false,
-        email: loginData.email,
-        password: loginData.password,
-      });
-
-      if (result?.error) {
-        setError('Invalid credentials');
-        setIsLoading(false)
-        return;
-      }
-
-      // Store patient details in localStorage
-      localStorage.setItem('patientId', patient.id)
-      localStorage.setItem('role', 'patient')
-
-      onOpenChange(false); // Close the dialog
-      window.location.href = '/dashboard'; // Redirect to dashboard
+      // Close dialog and redirect
+      onOpenChange(false)
+      router.push('/dashboard')
     } catch (error) {
-      setError('An error occurred. Please try again.');
-      console.error('Login error:', error);
+      setError('An error occurred. Please try again.')
+      console.error('Login error:', error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
 
-  const handleGoogleSigin = async () => {
+  const handleGoogleSignin = async () => {
     setIsLoading(true);
     try {
+      // Check existing login status first
+      const statusResponse = await fetch('/api/auth/status')
+      const statusData = await statusResponse.json()
+      
+      if (statusData.isLoggedIn) {
+        setError('You are already signed in. Please sign out first.')
+        setIsLoading(false)
+        return
+      }
+
       const result = await signIn("google", {
-        callbackUrl: "",
+        callbackUrl: "/dashboard",
         redirect: true
       });
-    } catch {
+    } catch (error) {
       setError("Failed to sign in with Google");
       console.error("Failed to sign in with Google");
     } finally {
@@ -255,7 +308,7 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
               variant="outline" 
               className="w-full text-xs sm:text-sm h-8 sm:h-10" 
               type="button" 
-              onClick={handleGoogleSigin} 
+              onClick={handleGoogleSignin} 
               disabled={isLoading}
             >
               <svg viewBox="0 0 24 24" className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" aria-hidden="true">
@@ -280,9 +333,9 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
             </Button>
 
             <div className="mt-3 sm:mt-4 text-center text-xs sm:text-sm">
-              Don&apos;t have an account?{" "}
+              <span>Not registered? </span>
               <button onClick={() => setActiveTab("register")} className="text-primary hover:underline">
-                Sign up
+                Create an account
               </button>
             </div>
           </TabsContent>
@@ -294,103 +347,118 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleRegisterSubmit}>
-            <div className="grid gap-3 sm:gap-4 py-3 sm:py-4">
-              <div className="grid gap-1 sm:gap-2">
-                <Label htmlFor="name" className="text-xs sm:text-sm">
-                  Full Name
-                </Label>
-                <Input
-                  id="name"
-                  name="name"
-                  placeholder="John Doe"
-                  value={registerData.name}
-                  onChange={handleRegisterChange}
-                  className="text-xs sm:text-sm h-8 sm:h-10"
-                  required
-                />
-              </div>
-              <div className="grid gap-1 sm:gap-2">
-                <Label htmlFor="register-email" className="text-xs sm:text-sm">
-                  Email
-                </Label>
-                <Input
-                  id="register-email"
-                  name="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  value={registerData.email}
-                  onChange={handleRegisterChange}
-                  className="text-xs sm:text-sm h-8 sm:h-10"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid gap-3 sm:gap-4 py-3 sm:py-4">
                 <div className="grid gap-1 sm:gap-2">
-                  <Label htmlFor="age" className="text-xs sm:text-sm">
-                    Age
+                  <Label htmlFor="name" className="text-xs sm:text-sm">
+                    Full Name
                   </Label>
                   <Input
-                    id="age"
-                    name="age"
-                    type="number"
-                    placeholder="Age"
-                    value={registerData.age ?? ''}
+                    id="name"
+                    name="name"
+                    placeholder="John Doe"
+                    value={registerData.name}
                     onChange={handleRegisterChange}
                     className="text-xs sm:text-sm h-8 sm:h-10"
-                    min={0}
-                    max={120}
+                    required
                   />
                 </div>
                 <div className="grid gap-1 sm:gap-2">
-                  <Label htmlFor="gender" className="text-xs sm:text-sm">
-                    Gender
+                  <Label htmlFor="register-email" className="text-xs sm:text-sm">
+                    Email
                   </Label>
-                  <Select 
-                    value={registerData.gender} 
-                    onValueChange={handleGenderChange}
-                  >
-                    <SelectTrigger className="text-xs sm:text-sm h-8 sm:h-10">
-                      <SelectValue placeholder="Select Gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="register-email"
+                    name="email"
+                    type="email"
+                    placeholder="name@example.com"
+                    value={registerData.email}
+                    onChange={handleRegisterChange}
+                    className="text-xs sm:text-sm h-8 sm:h-10"
+                    required
+                  />
                 </div>
-              </div>
-              <div className="grid gap-1 sm:gap-2">
-                <Label htmlFor="register-password" className="text-xs sm:text-sm">
-                  Password
-                </Label>
-                <Input
-                  id="register-password"
-                  name="password"
-                  type="password"
-                  value={registerData.password}
-                  onChange={handleRegisterChange}
-                  className="text-xs sm:text-sm h-8 sm:h-10"
-                  required
-                  minLength={6}
-                />
-              </div>
-              {error && (
-                <div className="text-red-500 text-xs sm:text-sm mt-2">
-                  {error}
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <div className="grid gap-1 sm:gap-2">
+                    <Label htmlFor="age" className="text-xs sm:text-sm">
+                      Age
+                    </Label>
+                    <Input
+                      id="age"
+                      name="age"
+                      type="number"
+                      placeholder="Age"
+                      value={registerData.age ?? ''}
+                      onChange={handleRegisterChange}
+                      className="text-xs sm:text-sm h-8 sm:h-10"
+                      min={0}
+                      max={120}
+                    />
+                  </div>
+                  <div className="grid gap-1 sm:gap-2">
+                    <Label htmlFor="gender" className="text-xs sm:text-sm">
+                      Gender
+                    </Label>
+                    <Select 
+                      value={registerData.gender} 
+                      onValueChange={handleGenderChange}
+                    >
+                      <SelectTrigger className="text-xs sm:text-sm h-8 sm:h-10">
+                        <SelectValue placeholder="Select Gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button 
-                type="submit" 
-                className="w-full text-xs sm:text-sm h-8 sm:h-10" 
-                disabled={isLoading}
-              >
-                {isLoading ? 'Loading...' : 'Create Account'}
-              </Button>
-            </DialogFooter>
-          </form>
+                <div className="grid gap-1 sm:gap-2">
+                  <Label htmlFor="register-password" className="text-xs sm:text-sm">
+                    Password
+                  </Label>
+                  <Input
+                    id="register-password"
+                    name="password"
+                    type="password"
+                    value={registerData.password}
+                    onChange={handleRegisterChange}
+                    className="text-xs sm:text-sm h-8 sm:h-10"
+                    required
+                    minLength={6}
+                  />
+                </div>
+                <div className="grid gap-1 sm:gap-2">
+                  <Label htmlFor="confirm-password" className="text-xs sm:text-sm">
+                    Confirm Password
+                  </Label>
+                  <Input
+                    id="confirm-password"
+                    name="confirmPassword"
+                    type="password"
+                    value={registerData.confirmPassword}
+                    onChange={handleRegisterChange}
+                    className="text-xs sm:text-sm h-8 sm:h-10"
+                    required
+                    minLength={6}
+                  />
+                </div>
+                {error && (
+                  <div className="text-red-500 text-xs sm:text-sm mt-2">
+                    {error}
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button 
+                  type="submit" 
+                  className="w-full text-xs sm:text-sm h-8 sm:h-10" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Loading...' : 'Create Account'}
+                </Button>
+              </DialogFooter>
+            </form>
 
             <div className="relative my-3 sm:my-4">
               <div className="absolute inset-0 flex items-center">
@@ -405,7 +473,7 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
               variant="outline" 
               className="w-full text-xs sm:text-sm h-8 sm:h-10" 
               type="button"
-              onClick={handleGoogleSigin} 
+              onClick={handleGoogleSignin} 
               disabled={isLoading}
             >
               <svg viewBox="0 0 24 24" className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" aria-hidden="true">

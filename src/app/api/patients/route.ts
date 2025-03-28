@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
+import { cookies } from 'next/headers'
 
 // Patient Validation Schema
 const PatientSchema = z.object({
@@ -20,9 +21,20 @@ export async function POST(req: NextRequest) {
     const validation = PatientSchema.safeParse(body)
 
     if (!validation.success) {
+      const formattedErrors = validation.error.errors.map(err => err.message).join(', ')
       return NextResponse.json({ 
-        error: validation.error.errors 
+        error: `Invalid input: ${formattedErrors}` 
       }, { status: 400 })
+    }
+
+    const existingPatient = await prisma.patient.findUnique({
+      where: { email: body.email }
+    })
+
+    if (existingPatient) {
+      return NextResponse.json({ 
+        error: 'Email already in use' 
+      }, { status: 409 })
     }
 
     const hashedPassword = await bcrypt.hash(body.password, 10)
@@ -36,8 +48,16 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(patient, { status: 201 })
   } catch (error: any) {
+    console.error('Patient registration error:', error)
+
+    if (error.code === 'P2002') {
+      return NextResponse.json({ 
+        error: 'A patient with this email already exists' 
+      }, { status: 409 })
+    }
+
     return NextResponse.json({ 
-      error: error.message 
+      error: 'Unable to complete registration. Please try again later.' 
     }, { status: 500 })
   }
 }
@@ -51,8 +71,15 @@ export async function GET() {
         name: true,
         age: true,
         gender: true,
-        appointments: true
-      }
+        appointments: {
+          include: {
+            doctor: true,
+          },
+          orderBy: {
+            dateTime: 'asc',
+          },
+        },
+      },
     })
     return NextResponse.json(patients)
   } catch (error: any) {
