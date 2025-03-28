@@ -1,17 +1,15 @@
-import type { Metadata } from "next"
+"use client"
+
+import { withRoleAccess } from "@/context/auth-context"
 import DashboardLayout from "@/components/dashboard/dashboard-layout"
-import DashboardOverview from "@/components/dashboard/dashboard-overview"
+import ProfileForm from "@/components/dashboard/profile-form"
 
-export const metadata: Metadata = {
-  title: "Patient Dashboard",
-  description: "View your appointments and medical records",
-}
-
-export default function DashboardPage() {
+function ProfileFormPage() {
   return (
     <DashboardLayout>
-      <DashboardOverview />
+      <ProfileForm />
     </DashboardLayout>
   )
 }
 
+export default withRoleAccess(ProfileFormPage, ['patient'])

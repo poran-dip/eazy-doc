@@ -1,13 +1,10 @@
-import type { Metadata } from "next"
+"use client"
+
+import { withRoleAccess } from "@/context/auth-context"
 import DashboardLayout from "@/components/dashboard/dashboard-layout"
 import AppointmentsList from "@/components/dashboard/appointment-list"
 
-export const metadata: Metadata = {
-  title: "My Appointments",
-  description: "View and manage your upcoming and past appointments",
-}
-
-export default function AppointmentsPage() {
+function AppointmentsPage() {
   return (
     <DashboardLayout>
       <AppointmentsList />
@@ -15,3 +12,4 @@ export default function AppointmentsPage() {
   )
 }
 
+export default withRoleAccess(AppointmentsPage, ['patient'])

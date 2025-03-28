@@ -2,14 +2,14 @@
 
 import { withRoleAccess } from "@/context/auth-context"
 import DashboardLayout from "@/components/dashboard/dashboard-layout"
-import LabResultsList from "@/components/dashboard/lab-results-list"
+import AdminDoctors from "@/components/admin/doctors"
 
-function LabResultsPage() {
+function DoctorsPage() {
   return (
     <DashboardLayout>
-      <LabResultsList />
+      <AdminDoctors />
     </DashboardLayout>
   )
 }
 
-export default withRoleAccess(LabResultsPage, ['patient'])
+export default withRoleAccess(DoctorsPage, ['admin'])

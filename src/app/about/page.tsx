@@ -47,9 +47,9 @@ export default function AboutUsPage() {
       role: 'Presentation & Project Coordination',
       college: 'Amity University',
       contact: '#',
-      image: '/rajdeep.jpg',
-      linkedin: '#',
-      github: '#',
+      image: '/rajdeep.jpeg',
+      linkedin: 'https://www.linkedin.com/in/rajdeep-choudhury-5152a4309',
+      github: 'https://github.com/RajdeepChoudhury',
       bio: 'Presentation ninja and coordination guru. Transforms technical chaos into smooth, understandable narratives.'
     },
     {

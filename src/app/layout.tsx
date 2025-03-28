@@ -1,15 +1,7 @@
 
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/sonner"
-import { BackgroundBeams } from "@/components/ui/background-beams";
-import { AuroraBackground } from "@/components/ui/aurora_background";
-
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-});
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "EZ Doc",
@@ -21,7 +13,9 @@ export default function RootLayout({ children, }: Readonly<{ children: React.Rea
     <html lang="en">
       <head />
       <body>
-        <main>{children}</main>
+        <main>
+          {children}
+        </main>
         <Toaster />
       </body>
     </html>
