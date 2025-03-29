@@ -93,9 +93,9 @@ export default function FeaturesPage() {
               ))}
             </CardContent>
             <CardFooter className="justify-center">
-              <Link href="/ambulance" className="w-full">
+              <Link href="/admin" className="w-full">
                 <Button variant="default" className="w-full cursor-pointer">
-                  Login as Ambulance
+                  Login as Admin
                 </Button>
               </Link>
             </CardFooter>

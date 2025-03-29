@@ -18,7 +18,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
 
-    return NextResponse.json({ message: 'OK' });
+    return NextResponse.json({
+      message: 'OK',
+      doctorId: doctor.id,
+      email: doctor.email,
+      role: 'doctor'
+    });
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json({ message: 'Server error' }, { status: 500 });

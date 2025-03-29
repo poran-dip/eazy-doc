@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -94,8 +94,9 @@ const DEFAULT_WORKING_HOURS = {
   Sunday: "Day off"
 };
 
+
 const DocAppointments = () => {
-  const weekDates = generateWeekDates();
+  const weekDates = useMemo(() => generateWeekDates(), []);
   const todayFullDay = new Date().toLocaleString('en-us', { weekday: 'long' });
   const [selectedDay, setSelectedDay] = useState(todayFullDay);
   const [selectedDate, setSelectedDate] = useState(weekDates[0]);
@@ -107,8 +108,12 @@ const DocAppointments = () => {
   const [isLoading, setIsLoading] = useState(true);
   
   // Get doctor ID from session/context/localStorage
-  // For now we'll hardcode it for testing
-  const userId = localStorage.getItem('userId');
+  const [doctorId, setDoctorId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const storedDoctorId = localStorage.getItem('doctorId');
+    if (storedDoctorId) setDoctorId(storedDoctorId);
+  }, []);
   
   // Transform API data to weekly schedule format
   const formatAppointmentsToWeeklySchedule = useCallback((appointments: AppointmentData[], dates: typeof weekDates): WeeklySchedule => {
@@ -158,18 +163,11 @@ const DocAppointments = () => {
   }, []);
 
   useEffect(() => {
+    if (!doctorId) return;
+
     const fetchAppointments = async () => {
       setIsLoading(true);
       try {
-        const doctorResponse = await fetch(`/api/doctors/user/${userId}`);
-        
-        if (!doctorResponse.ok) {
-          throw new Error('Failed to find doctor');
-        }
-        
-        const doctorData = await doctorResponse.json();
-        const doctorId = doctorData.id;
-        
         // Calculate date range for next 7 days
         const startDate = weekDates[0].isoString;
         const endDate = weekDates[6].isoString;
@@ -201,7 +199,7 @@ const DocAppointments = () => {
     };
     
     fetchAppointments();
-  }, [userId, weekDates, formatAppointmentsToWeeklySchedule]);
+  }, [doctorId, weekDates, formatAppointmentsToWeeklySchedule]);
 
   const countNewAppointments = (day: string) => {
     return weeklyAppointments[day]?.listOfPatients.filter(patient => patient.isNew).length || 0;
