@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 
 // Define chat session interface with session tracking
 interface ChatSession {
-  instance: any;
+  instance: ReturnType<ReturnType<typeof getMedbotModel>["startChat"]> | null;
   hasInitialContext: boolean;
   sessionId: string;
 }

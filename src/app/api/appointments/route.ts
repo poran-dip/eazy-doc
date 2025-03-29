@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
-import { Prisma } from '@prisma/client'
 
 // Appointment Validation Schema
 const AppointmentSchema = z.object({
@@ -18,8 +17,6 @@ const AppointmentSchema = z.object({
   tests: z.array(z.string()).optional(),
   relatedAppointmentId: z.string().optional()
 })
-
-type PrismaError = Prisma.PrismaClientKnownRequestError | Prisma.PrismaClientUnknownRequestError
 
 export async function POST(req: NextRequest) {
   try {
@@ -59,32 +56,10 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json(appointment, { status: 201 })
-<<<<<<< HEAD
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return NextResponse.json({ 
-          error: 'This appointment slot is already taken'
-        }, { status: 409 })
-      }
-      if (error.code === 'P2025') {
-        return NextResponse.json({ 
-          error: 'Referenced record not found'
-        }, { status: 404 })
-      }
-      return NextResponse.json({ 
-        error: `Database error: ${error.message}`,
-        code: error.code
-      }, { status: 400 })
-    }
-    return NextResponse.json({ 
-      error: 'Internal server error'
-=======
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'an unknown error occurred'
     return NextResponse.json({ 
       error: errorMessage 
->>>>>>> 5a1d428 (build errors half fixed)
     }, { status: 500 })
   }
 }
@@ -101,22 +76,10 @@ export async function GET() {
       }
     })
     return NextResponse.json(appointments)
-<<<<<<< HEAD
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return NextResponse.json({ 
-        error: `Database error: ${error.message}`,
-        code: error.code
-      }, { status: 400 })
-    }
-    return NextResponse.json({ 
-      error: 'Internal server error'
-=======
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'an unknown error occurred'
     return NextResponse.json({ 
       error: errorMessage 
->>>>>>> 5a1d428 (build errors half fixed)
     }, { status: 500 })
   }
 }

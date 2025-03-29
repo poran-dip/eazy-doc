@@ -1,5 +1,4 @@
 import React from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import Navbar from '@/components/navbar';
 import { Card } from '@/components/ui/card';
@@ -85,17 +84,17 @@ export default function AboutUsPage() {
           <h1 className="text-4xl font-bold text-center mb-6">Our Journey</h1>
           <div className="max-w-2xl mx-auto space-y-6 text-center text-muted-foreground">
             <p>
-              Eazydoc didn't start with a grand plan—it started with Dikshayn convincing <span className="italic">(read: nagging)</span> me to join 
+              Eazydoc didn&apos;t start with a grand plan—it started with Dikshayn convincing <span className="italic">(read: nagging)</span> me to join 
               yet another hackathon. Once we were in, we teamed up with Rajdeep and Hirok to build something real:
               a seamless healthcare platform that connects patients, doctors, and hospitals with ease, making medical access simpler than ever.
             </p>
             <p>
               With Dikshayn leading the AI-driven medbot and me handling most of the backend, we pushed
-              ourselves beyond what we'd ever built before. Every late night, every refactor, and every unexpected 
-              bug brought us here—turning what started as a hackathon project into something we're truly proud of.
+              ourselves beyond what we&apos;d ever built before. Every late night, every refactor, and every unexpected 
+              bug brought us here—turning what started as a hackathon project into something we&apos;re truly proud of.
             </p>
             <p>
-              Eazydoc isn't just an idea anymore. It's a step toward accessible, AI-powered healthcare.
+              Eazydoc isn&apos;t just an idea anymore. It&apos;s a step toward accessible, AI-powered healthcare.
             </p>
             <p className="text-right mt-6">~Poran Dip</p>
           </div>
@@ -107,16 +106,6 @@ export default function AboutUsPage() {
           <div className="grid md:grid-cols-2 gap-6">
             {teamMembers.map((member, index) => (
               <Card key={index} className="flex items-center p-6 group hover:bg-gray-50 transition-colors duration-300">
-<<<<<<< HEAD
-                <div className="flex-shrink-0 mr-6 relative w-24 h-24">
-                  <Image 
-                    src={member.image}
-                    alt={member.name}
-                    fill
-                    className="rounded-full border-2 border-primary shadow-sm object-cover
-                             transform group-hover:scale-105 transition-transform duration-300"
-                  />
-=======
                 <div className="flex-shrink-0 mr-6">
                 <Image 
                   src={member.image} 
@@ -127,7 +116,6 @@ export default function AboutUsPage() {
                             transform group-hover:scale-115 transition-transform duration-300"
                   priority // optional, use for images above the fold
                 />
->>>>>>> 5a1d428 (build errors half fixed)
                 </div>
                 <div className="flex-grow">
                   <h3 className="text-xl font-bold mb-1">{member.name}</h3>

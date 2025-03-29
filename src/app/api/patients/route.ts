@@ -2,10 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
-<<<<<<< HEAD
-import { Prisma } from '@prisma/client'
-=======
->>>>>>> 5a1d428 (build errors half fixed)
 
 // Patient Validation Schema
 const PatientSchema = z.object({
@@ -16,8 +12,6 @@ const PatientSchema = z.object({
   age: z.number().optional(),
   gender: z.string().optional()
 })
-
-type PrismaError = Prisma.PrismaClientKnownRequestError | Prisma.PrismaClientUnknownRequestError
 
 export async function POST(req: NextRequest) {
   try {
@@ -61,25 +55,11 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json(patient, { status: 201 })
-<<<<<<< HEAD
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return NextResponse.json({ 
-          error: 'A patient with this email already exists' 
-        }, { status: 409 })
-      }
-      return NextResponse.json({ 
-        error: `Database error: ${error.message}`,
-        code: error.code
-      }, { status: 400 })
-=======
   } catch (error: unknown) {
     if (error instanceof Error) {
       console.error('patient registration error:', error.message)
     } else {
         console.error('patient registration error:', error)
->>>>>>> 5a1d428 (build errors half fixed)
     }
     console.error('Patient registration error:', error)
     return NextResponse.json({ 
@@ -115,22 +95,10 @@ export async function GET() {
       }
     })
     return NextResponse.json(patients)
-<<<<<<< HEAD
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return NextResponse.json({ 
-        error: `Database error: ${error.message}`,
-        code: error.code
-      }, { status: 400 })
-    }
-    return NextResponse.json({ 
-      error: 'Failed to fetch patients' 
-=======
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'an unknown error occurred'
     return NextResponse.json({ 
       error: errorMessage 
->>>>>>> 5a1d428 (build errors half fixed)
     }, { status: 500 })
   }
 }

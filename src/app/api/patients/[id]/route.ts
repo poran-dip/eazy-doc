@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
-import { Prisma } from '@prisma/client'
 
 // Patient Update Schema
 const PatientUpdateSchema = z.object({
@@ -10,8 +9,6 @@ const PatientUpdateSchema = z.object({
   age: z.number().optional(),
   gender: z.string().optional()
 })
-
-type PrismaError = Prisma.PrismaClientKnownRequestError | Prisma.PrismaClientUnknownRequestError
 
 export async function GET(
   req: NextRequest, 
@@ -41,22 +38,10 @@ export async function GET(
     }
 
     return NextResponse.json(patient)
-<<<<<<< HEAD
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return NextResponse.json({ 
-        error: `Database error: ${error.message}`,
-        code: error.code
-      }, { status: 400 })
-    }
-    return NextResponse.json({ 
-      error: 'Internal server error' 
-=======
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'an unknown error occurred'
     return NextResponse.json({ 
       error: errorMessage 
->>>>>>> 5a1d428 (build errors half fixed)
     }, { status: 500 })
   }
 }
@@ -92,27 +77,10 @@ export async function PUT(
     })
 
     return NextResponse.json(patient)
-<<<<<<< HEAD
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2025') {
-        return NextResponse.json({ 
-          error: 'Patient not found' 
-        }, { status: 404 })
-      }
-      return NextResponse.json({ 
-        error: `Database error: ${error.message}`,
-        code: error.code
-      }, { status: 400 })
-    }
-    return NextResponse.json({ 
-      error: 'Internal server error' 
-=======
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'an unknown error occurred'
     return NextResponse.json({ 
       error: errorMessage 
->>>>>>> 5a1d428 (build errors half fixed)
     }, { status: 500 })
   }
 }
@@ -138,27 +106,10 @@ export async function DELETE(
     return NextResponse.json<{ message: string }>({ 
       message: 'Patient and associated appointments deleted successfully' 
     })
-<<<<<<< HEAD
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2025') {
-        return NextResponse.json({ 
-          error: 'Patient not found' 
-        }, { status: 404 })
-      }
-      return NextResponse.json({ 
-        error: `Database error: ${error.message}`,
-        code: error.code
-      }, { status: 400 })
-    }
-    return NextResponse.json({ 
-      error: 'Internal server error' 
-=======
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'an unknown error occurred'
     return NextResponse.json({ 
       error: errorMessage 
->>>>>>> 5a1d428 (build errors half fixed)
     }, { status: 500 })
   }
 }

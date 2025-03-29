@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
-import { Prisma } from '@prisma/client'
 
 // Ambulance Validation Schema
 const AmbulanceSchema = z.object({
@@ -13,8 +12,6 @@ const AmbulanceSchema = z.object({
   image: z.string().optional(),
   status: z.enum(['AVAILABLE', 'ON_DUTY', 'OFF_DUTY', 'UNAVAILABLE']).optional()
 })
-
-type PrismaError = Prisma.PrismaClientKnownRequestError | Prisma.PrismaClientUnknownRequestError
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,22 +34,10 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json(ambulance, { status: 201 })
-<<<<<<< HEAD
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return NextResponse.json({ 
-        error: `Database error: ${error.message}`,
-        code: error.code
-      }, { status: 400 })
-    }
-    return NextResponse.json({ 
-      error: 'Internal server error' 
-=======
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'an unknown error occurred'
     return NextResponse.json({ 
       error: errorMessage
->>>>>>> 5a1d428 (build errors half fixed)
     }, { status: 500 })
   }
 }
@@ -70,22 +55,10 @@ export async function GET() {
       }
     })
     return NextResponse.json(ambulances)
-<<<<<<< HEAD
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return NextResponse.json({ 
-        error: `Database error: ${error.message}`,
-        code: error.code
-      }, { status: 400 })
-    }
-    return NextResponse.json({ 
-      error: 'Internal server error' 
-=======
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'an unknown error occurred'
     return NextResponse.json({ 
       error: errorMessage 
->>>>>>> 5a1d428 (build errors half fixed)
     }, { status: 500 })
   }
 }

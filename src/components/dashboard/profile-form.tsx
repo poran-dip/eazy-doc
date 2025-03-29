@@ -263,9 +263,6 @@ export default function ProfileForm() {
             onMonthChange={setViewDate}
             disabled={disabled}
             className="border-none"
-            components={{
-              Head: () => null, // Hide the default header
-            }}
           />
         )}
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Menu } from "lucide-react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -28,7 +29,13 @@ export default function Navbar() {
       <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center text-lg font-semibold">
-            <img src="/logo.jpg" alt="Eazydoc Logo" className="h-8 w-auto mr-2 object-contain" />
+          <Image
+            src="/logo.jpg"
+            alt="Eazydoc Logo"
+            width={32} // set appropriate width
+            height={32} // set appropriate height
+            className="h-8 w-auto mr-2 object-contain"
+          />
             <span className="font-bold">Eazydoc</span>
           </Link>
         </div>

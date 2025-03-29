@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -110,6 +110,53 @@ const DocAppointments = () => {
   // For now we'll hardcode it for testing
   const userId = localStorage.getItem('userId');
   
+  // Transform API data to weekly schedule format
+  const formatAppointmentsToWeeklySchedule = useCallback((appointments: AppointmentData[], dates: typeof weekDates): WeeklySchedule => {
+    const schedule: WeeklySchedule = {};
+    const dateToDay = new Map();
+  
+    dates.forEach(dateInfo => {
+      dateToDay.set(dateInfo.isoString, dateInfo.fullDay);
+      schedule[dateInfo.fullDay] = {
+        workingHours: DEFAULT_WORKING_HOURS[dateInfo.fullDay as keyof typeof DEFAULT_WORKING_HOURS],
+        listOfPatients: []
+      };
+    });
+  
+    appointments.forEach(appointment => {
+      const appointmentDate = new Date(appointment.dateTime);
+      const appointmentIsoDate = appointmentDate.toLocaleDateString('en-CA');
+      const dayName = dateToDay.get(appointmentIsoDate);
+  
+      if (dayName && schedule[dayName]) {
+        const appointmentTime = appointmentDate.toLocaleTimeString('en-us', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
+  
+        schedule[dayName].listOfPatients.push({
+          id: appointment.id,
+          appointmentTime,
+          patientName: appointment.patient.name,
+          patientId: appointment.patientId,
+          condition: appointment.condition || 'General Checkup',
+          description: appointment.description || '',
+          isNew: appointment.status === 'NEW',
+          status: appointment.status,
+          age: appointment.patient.age,
+          sex: appointment.patient.gender,
+          comments: appointment.comments || '',
+          prescriptions: appointment.prescriptions || [],
+          tests: appointment.tests || [],
+          appointmentHistory: appointment.appointmentHistory || []
+        });
+      }
+    });
+  
+    return schedule;
+  }, []);
+
   useEffect(() => {
     const fetchAppointments = async () => {
       setIsLoading(true);
@@ -154,84 +201,7 @@ const DocAppointments = () => {
     };
     
     fetchAppointments();
-  }, [userId]);
-  
-  // Transform API data to weekly schedule format
-  const formatAppointmentsToWeeklySchedule = (appointments: AppointmentData[], dates: typeof weekDates): WeeklySchedule => {
-    // Initialize empty schedule with default working hours
-    const schedule: WeeklySchedule = {};
-    
-    // Create a map of ISO date strings to day names for easier lookup
-    const dateToDay = new Map();
-    dates.forEach(dateInfo => {
-      // Store in format YYYY-MM-DD -> dayName
-      dateToDay.set(dateInfo.isoString, dateInfo.fullDay);
-      
-      schedule[dateInfo.fullDay] = {
-        workingHours: DEFAULT_WORKING_HOURS[dateInfo.fullDay as keyof typeof DEFAULT_WORKING_HOURS],
-        listOfPatients: []
-      };
-    });
-    
-    // Log appointments for debugging
-    console.log('Appointments to process:', appointments);
-    
-    // Add appointments to their respective days
-    appointments.forEach(appointment => {
-      // Parse the appointment date and adjust for local timezone
-      const appointmentDate = new Date(appointment.dateTime);
-      
-      // Convert to local date string in YYYY-MM-DD format
-      const appointmentIsoDate = appointmentDate.toLocaleDateString('en-CA'); // en-CA gives YYYY-MM-DD format
-      
-      // Log for debugging
-      console.log('Processing appointment:', appointmentIsoDate, appointment.patient.name, 'Status:', appointment.status);
-      
-      // Find the corresponding day using our map
-      const dayName = dateToDay.get(appointmentIsoDate);
-      console.log('Mapped to day:', dayName);
-      
-      if (dayName && schedule[dayName]) {
-        // Format time to 12-hour format (e.g., "3:00 PM") in local timezone
-        const appointmentTime = appointmentDate.toLocaleTimeString('en-us', {
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true
-        });
-        
-        // Create formatted appointment
-        const formattedAppointment: FormattedAppointment = {
-          id: appointment.id,
-          appointmentTime,
-          patientName: appointment.patient.name,
-          patientId: appointment.patientId,
-          condition: appointment.condition || 'General Checkup',
-          description: appointment.description || '',
-          isNew: appointment.status === 'NEW',
-          status: appointment.status,  // Add status property
-          age: appointment.patient.age,
-          sex: appointment.patient.gender,
-          comments: appointment.comments || '',
-          prescriptions: appointment.prescriptions || [],
-          tests: appointment.tests || [],
-          appointmentHistory: appointment.appointmentHistory || []
-        };
-        
-        schedule[dayName].listOfPatients.push(formattedAppointment);
-      } else {
-        console.log('Appointment not in current week:', appointmentIsoDate);
-      }
-    });
-    
-    // Sort appointments by time
-    Object.keys(schedule).forEach(day => {
-      schedule[day].listOfPatients.sort((a, b) => {
-        return a.appointmentTime.localeCompare(b.appointmentTime);
-      });
-    });
-    
-    return schedule;
-  };
+  }, [userId, weekDates, formatAppointmentsToWeeklySchedule]);
 
   const countNewAppointments = (day: string) => {
     return weeklyAppointments[day]?.listOfPatients.filter(patient => patient.isNew).length || 0;

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
-import { Prisma } from '@prisma/client'
 
 // Doctor Validation Schema
 const DoctorSchema = z.object({
@@ -14,8 +13,6 @@ const DoctorSchema = z.object({
   specialization: z.string(),
   status: z.enum(['AVAILABLE', 'ON_DUTY', 'OFF_DUTY', 'UNAVAILABLE']).optional().default('AVAILABLE')
 })
-
-type PrismaError = Prisma.PrismaClientKnownRequestError | Prisma.PrismaClientUnknownRequestError
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,26 +34,6 @@ export async function POST(req: NextRequest) {
       }
     })
 
-<<<<<<< HEAD
-    // Exclude sensitive information from response
-    const { password: _password, ...doctorResponse } = doctor
-
-    return NextResponse.json(doctorResponse, { status: 201 })
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return NextResponse.json({ 
-          error: 'Email already exists'
-        }, { status: 409 })
-      }
-      return NextResponse.json({ 
-        error: `Database error: ${error.message}`,
-        code: error.code
-      }, { status: 400 })
-    }
-    return NextResponse.json({ 
-      error: 'Internal server error'
-=======
     // Exclude sensitive information
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _password, ...doctorResponse } = doctor
@@ -66,7 +43,6 @@ export async function POST(req: NextRequest) {
     const errorMessage = error instanceof Error ? error.message : 'an unknown error occurred'
     return NextResponse.json({ 
       error: errorMessage 
->>>>>>> 5a1d428 (build errors half fixed)
     }, { status: 500 })
   }
 }
@@ -100,22 +76,10 @@ export async function GET(req: NextRequest) {
       }
     })
     return NextResponse.json(doctors)
-<<<<<<< HEAD
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return NextResponse.json({ 
-        error: `Database error: ${error.message}`,
-        code: error.code
-      }, { status: 400 })
-    }
-    return NextResponse.json({ 
-      error: 'Internal server error'
-=======
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'an unknown error occurred'
     return NextResponse.json({ 
       error: errorMessage 
->>>>>>> 5a1d428 (build errors half fixed)
     }, { status: 500 })
   }
 }
