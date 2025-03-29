@@ -210,7 +210,7 @@ export default function PatientAppointmentRegistrationPage() {
   }
 
   const handleLoginRedirect = () => {
-    router.push('/login')
+    router.push('/')
   }
 
   return (

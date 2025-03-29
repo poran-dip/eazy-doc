@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { CheckCircle } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react";
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -23,11 +23,12 @@ interface AppointmentDetails {
   condition?: string
 }
 
-export default function ConfirmationPage({
-  searchParams,
-}: {
-  searchParams: { doctor: string, appointment: string }
-}) {
+export default function ConfirmationPage(
+  props: {
+    searchParams: Promise<{ doctor: string, appointment: string }>
+  }
+) {
+  const searchParams = use(props.searchParams);
   const [appointmentDetails, setAppointmentDetails] = useState<AppointmentDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
