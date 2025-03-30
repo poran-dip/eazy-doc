@@ -35,7 +35,7 @@ export default function FeaturedDoctors() {
   useEffect(() => {
     async function fetchFeaturedDoctors() {
       try {
-        const response = await fetch('http://localhost:3000/api/doctors', { method: 'GET' })
+        const response = await fetch('/api/doctors', { method: 'GET' })
         
         if (!response.ok) {
           throw new Error('Failed to fetch doctors')
