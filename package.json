@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "postinstall": "prisma generate",
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
@@ -67,5 +68,15 @@
     "tailwindcss": "^4.0.14",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "bcrypt",
+      "esbuild",
+      "prisma",
+      "sharp"
+    ]
   }
 }
