@@ -1,9 +1,74 @@
+import { Suspense } from "react"
 import DoctorSearch from "@/components/homepage/doctor-search"
 import FeaturedDoctors from "@/components/homepage/featured-doctors"
 import MedbotPromo from "@/components/homepage/medbot-promo"
 import Navbar from "@/components/navbar"
+import { prisma } from "@/lib/prisma"
+import { revalidatePath } from "next/cache"
+import { Decimal } from "@prisma/client/runtime/library"
 
-export default function Home() {
+// Define the Doctor interface at the top level
+interface Doctor {
+  id: string;
+  name: string | null;
+  specialization: string;
+  image: string | null;
+  rating: number;
+  location: string | null;
+  status?: string;
+  appointments: Appointment[];
+}
+
+interface Appointment {
+  [key: string]: unknown;
+}
+
+// Set revalidation time to 24 hours (in seconds)
+export const revalidate = 86400;
+
+async function fetchDoctors(): Promise<{ doctors: Doctor[], error: string | null }> {
+  try {
+    const doctorsData = await prisma.doctor.findMany({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        specialization: true,
+        status: true,
+        rating: true,
+        image: true,
+        location: true,
+        appointments: {
+          select: {
+            id: true,
+            status: true
+          }
+        }
+      }
+    });
+    
+    // Convert Decimal to number for each doctor
+    const doctors: Doctor[] = doctorsData.map(doctor => ({
+      ...doctor,
+      rating: doctor.rating instanceof Decimal ? doctor.rating.toDecimalPlaces(1).toNumber() : Number(doctor.rating)
+    }));
+    
+    return {
+      doctors,
+      error: null
+    };
+  } catch (error) {
+    console.error('Error fetching doctors:', error);
+    return {
+      doctors: [],
+      error: 'Failed to load doctors'
+    };
+  }
+}
+
+export default async function Home() {
+  const { doctors, error } = await fetchDoctors();
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -16,13 +81,17 @@ export default function Home() {
                 Search thousands of specialists and get the care you deserve.
               </p>
             </div>
-            <DoctorSearch />
+            <Suspense fallback={<div className="text-center">Loading doctor search...</div>}>
+              <DoctorSearch doctors={doctors} isLoading={false} error={error} />
+            </Suspense>
           </div>
         </section>
 
         <MedbotPromo />
 
-        <FeaturedDoctors />
+        <Suspense fallback={<div className="text-center">Loading featured doctors...</div>}>
+          <FeaturedDoctors doctors={doctors} isLoading={false} error={error} />
+        </Suspense>
       </main>
       <footer className="border-t py-6 md:py-8">
         <div className="container px-4 md:px-6">
@@ -38,4 +107,11 @@ export default function Home() {
       </footer>
     </div>
   )
+}
+
+// Optional: Add a function to manually trigger revalidation if needed
+export async function refreshDoctorData() {
+  'use server'
+  revalidatePath('/');
+  return { message: 'Data revalidation triggered' };
 }

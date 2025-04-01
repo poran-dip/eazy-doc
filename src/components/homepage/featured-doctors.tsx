@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useEffect } from 'react'
 import Image from "next/image"
 import Link from "next/link"
 import Cookies from 'js-cookie'
@@ -12,60 +11,39 @@ import { Badge } from "@/components/ui/badge"
 
 interface Doctor {
   id: string;
-  name: string;
-  image: string;
+  name: string | null;
   specialization: string;
+  image: string | null;
   rating: number;
-  location: string;
-  status: string;
-  reviews: number;
-  appointments: Appointment[]
+  location: string | null;
+  status?: string;
+  appointments: Appointment[];
 }
 
 interface Appointment {
   [key: string]: unknown;
 }
 
-export default function FeaturedDoctors() {
-  const [doctors, setDoctors] = useState<Doctor[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+interface FeaturedDoctorsProps {
+  doctors: Doctor[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+export default function FeaturedDoctors({ doctors, isLoading, error }: FeaturedDoctorsProps) {
   const router = useRouter()
-
-  useEffect(() => {
-    async function fetchFeaturedDoctors() {
-      try {
-        const response = await fetch('/api/doctors', { method: 'GET' })
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch doctors')
-        }
-
-        const fetchedDoctors = await response.json()
-
-        // Take first 4 doctors and map to desired format
-        const formattedDoctors = fetchedDoctors.slice(0, 4).map((doctor: Doctor) => ({
-          id: doctor.id,
-          name: doctor.name || 'Unnamed Doctor',
-          specialization: doctor.specialization,
-          rating: doctor.rating || 0,
-          reviews: doctor.appointments.length,
-          location: doctor.location || 'Location Not Specified',
-          image: doctor.image || "/placeholder.svg?height=400&width=400",
-          status: doctor.status
-        }))
-
-        setDoctors(formattedDoctors)
-        setIsLoading(false)
-      } catch (error) {
-        console.error('Error fetching featured doctors:', error)
-        setError('Failed to load doctors')
-        setIsLoading(false)
-      }
-    }
-
-    fetchFeaturedDoctors()
-  }, [])
+  
+  // Get the first 4 doctors to feature
+  const featuredDoctors = doctors.slice(0, 4).map(doctor => ({
+    id: doctor.id,
+    name: doctor.name || 'Unnamed Doctor',
+    specialization: doctor.specialization,
+    rating: doctor.rating || 0,
+    reviews: doctor.appointments.length,
+    location: doctor.location || 'Location Not Specified',
+    image: doctor.image || "/placeholder.svg?height=400&width=400",
+    status: doctor.status || 'AVAILABLE'
+  }))
 
   const handleBookAppointment = (doctorId: string) => {
     Cookies.set('selectedDoctorId', doctorId, { expires: 2/1440 })
@@ -102,7 +80,7 @@ export default function FeaturedDoctors() {
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {doctors.map((doctor: Doctor) => (
+          {featuredDoctors.map((doctor) => (
             <Card key={doctor.id} className="overflow-hidden border shadow-sm">
               <div className="aspect-square relative">
                 <Image 

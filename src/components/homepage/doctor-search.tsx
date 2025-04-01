@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
 import { Search } from "lucide-react"
 import Cookies from 'js-cookie'
@@ -14,67 +14,60 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 
-// Type for Doctor Search Result
-interface DoctorResult {
-  id: string
-  name: string | null
-  specialization: string
-  image: string | null
-  rating: number
-  location: string | null
-  appointments: Appointment[]
+// Type for Doctor
+interface Doctor {
+  id: string;
+  name: string | null;
+  specialization: string;
+  image: string | null;
+  rating: number;
+  location: string | null;
+  status?: string;
+  appointments: Appointment[];
 }
 
 interface Appointment {
   [key: string]: unknown;
 }
 
-export default function DoctorSearch() {
+interface DoctorSearchProps {
+  doctors: Doctor[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+export default function DoctorSearch({ doctors, isLoading, error }: DoctorSearchProps) {
   const [specialty, setSpecialty] = useState("")
   const [location, setLocation] = useState("")
-  const [searchResults, setSearchResults] = useState<DoctorResult[] | null>(null)
-  const [isSearching, setIsSearching] = useState(false)
+  const [searchResults, setSearchResults] = useState<Doctor[] | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
 
   const router = useRouter();
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSearching(true)
-    setSearchResults(null)
     setHasSearched(true)
-
-    try {
-      // Fetch doctors from API route
-      const response = await fetch(`/api/doctors?${new URLSearchParams({
-        ...(specialty ? { specialization: specialty } : {}),
-        ...(location ? { location } : {})
-      }).toString()}`)
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch doctors')
-      }
-
-      const doctors = await response.json()
-
-      // Transform doctors into search results
-      const results: DoctorResult[] = doctors.map((doctor: DoctorResult) => ({
-        id: doctor.id,
-        name: doctor.name,
-        specialty: doctor.specialization,
-        image: doctor.image,
-        rating: Number(doctor.rating),
-        location: doctor.location,
-        appointments: doctor.appointments || []
-      }))
-
-      setSearchResults(results)
-    } catch (error) {
-      console.error("Error searching for doctors:", error)
-      setSearchResults([])
-    } finally {
-      setIsSearching(false)
+    
+    // Filter doctors based on search criteria
+    let results = doctors;
+    
+    // Filter by specialty if not "All"
+    if (specialty && specialty !== "All") {
+      results = results.filter(doctor => 
+        doctor.specialization === specialty
+      );
     }
+    
+    // Filter by location with partial matching
+    if (location) {
+      const locationLower = location.toLowerCase();
+      results = results.filter(doctor => 
+        doctor.location && 
+        doctor.location.toLowerCase().includes(locationLower)
+      );
+    }
+    
+    setSearchResults(results);
   }
 
   // Reset search results when specialty or location changes
@@ -95,6 +88,26 @@ export default function DoctorSearch() {
     router.push(`/book`)
   }
 
+  if (isLoading) {
+    return (
+      <Card className="shadow-sm bg-white">
+        <CardContent className="p-6 text-center">
+          <p>Loading doctors...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="shadow-sm bg-white">
+        <CardContent className="p-6 text-center">
+          <p className="text-red-500">{error}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="w-full max-w-4xl mx-auto">
       <Card className="shadow-sm bg-white">
@@ -110,6 +123,7 @@ export default function DoctorSearch() {
                     <SelectValue placeholder="Select specialty" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="All">All Specialties</SelectItem>
                     <SelectItem value="Cardiology">Cardiology</SelectItem>
                     <SelectItem value="Dermatology">Dermatology</SelectItem>
                     <SelectItem value="Neurology">Neurology</SelectItem>
@@ -135,11 +149,10 @@ export default function DoctorSearch() {
               <div className="md:col-span-2 flex items-end">
                 <Button 
                   type="submit" 
-                  className="w-full bg-black text-white hover:bg-gray-800" 
-                  disabled={isSearching}
+                  className="w-full bg-black text-white hover:bg-gray-800"
                 >
                   <Search className="h-4 w-4 mr-2" />
-                  {isSearching ? "Searching..." : "Search"}
+                  Search
                 </Button>
               </div>
             </div>
@@ -152,7 +165,7 @@ export default function DoctorSearch() {
           <Card>
             <CardContent className="p-6">
               <p className="text-lg text-muted-foreground">
-                No doctors found{specialty ? ` for ${specialty}` : ''}{location ? ` in ${location}` : ''}. 
+                No doctors found{specialty && specialty !== "All" ? ` for ${specialty}` : ''}{location ? ` in ${location}` : ''}. 
                 Please try different search criteria.
               </p>
             </CardContent>
@@ -205,7 +218,7 @@ export default function DoctorSearch() {
                             ))}
                         </div>
                         <span className="ml-2 text-sm">
-                          {doctor.rating.toFixed(1)} ({doctor.appointments.length} reviews)
+                          {doctor.rating} ({doctor.appointments.length} reviews)
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-2">
