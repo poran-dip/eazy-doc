@@ -4,7 +4,6 @@ import FeaturedDoctors from "@/components/homepage/featured-doctors"
 import MedbotPromo from "@/components/homepage/medbot-promo"
 import Navbar from "@/components/navbar"
 import { prisma } from "@/lib/prisma"
-import { revalidatePath } from "next/cache"
 import { Decimal } from "@prisma/client/runtime/library"
 
 // Define the Doctor interface at the top level
@@ -107,11 +106,4 @@ export default async function Home() {
       </footer>
     </div>
   )
-}
-
-// Optional: Add a function to manually trigger revalidation if needed
-export async function refreshDoctorData() {
-  'use server'
-  revalidatePath('/');
-  return { message: 'Data revalidation triggered' };
 }

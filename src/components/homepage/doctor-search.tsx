@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { Search } from "lucide-react"
 import Cookies from 'js-cookie'
