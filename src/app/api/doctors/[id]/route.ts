@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import bcrypt from 'bcryptjs'
+import { Prisma } from '@prisma/client'
 
 // Doctor Update Schema
 const DoctorUpdateSchema = z.object({
   name: z.string().optional(),
+  email: z.string().email().optional(),
+  password: z.string().optional(),
   image: z.string().optional(),
   specialization: z.string().optional(),
   status: z.enum(['AVAILABLE', 'ON_DUTY', 'OFF_DUTY', 'UNAVAILABLE']).optional(),
@@ -57,19 +61,36 @@ export async function PUT(
     const { id } = await params;
     const body = await req.json()
 
-    const validation = DoctorUpdateSchema.safeParse(body)
+    const validation = DoctorUpdateSchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json({ 
         error: validation.error.errors 
-      }, { status: 400 })
+      }, { status: 400 });
     }
 
-    const doctor = await prisma.doctor.update({
-      where: { id },
-      data: validation.data
-    })
+    const validatedData = validation.data;
 
-    return NextResponse.json(doctor)
+    const dataToUpdate: Prisma.DoctorUpdateInput = {
+      ...(validatedData.name && { name: validatedData.name }),
+      ...(validatedData.email && { email: validatedData.email }),
+      ...(validatedData.image && { image: validatedData.image }),
+      ...(validatedData.specialization && { specialization: validatedData.specialization }),
+      ...(validatedData.location && { location: validatedData.location }),
+      ...(validatedData.status && { status: validatedData.status }),
+      ...(validatedData.rating !== undefined && { rating: new Prisma.Decimal(validatedData.rating) }),
+    };
+
+    if (validatedData.password) {
+      const hashed = await bcrypt.hash(validatedData.password, 10);
+      dataToUpdate.password = hashed;
+    }
+    
+    const updatedDoctor = await prisma.doctor.update({
+      where: { id },
+      data: dataToUpdate,
+    });
+
+    return NextResponse.json(updatedDoctor);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'an unknown error occurred'
     return NextResponse.json({ 

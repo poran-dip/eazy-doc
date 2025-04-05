@@ -218,7 +218,7 @@ const DocAppointments = () => {
     if (selectedPatient && selectedDay) {
       try {
         // Update comments in the backend
-        const response = await fetch(`/api/appointments/${selectedPatient.id}/comments`, {
+        const response = await fetch(`/api/appointments/${selectedPatient.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

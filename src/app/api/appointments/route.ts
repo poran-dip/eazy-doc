@@ -64,9 +64,18 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url)
+
+    const doctorId = searchParams.get('doctorId')
+    const patientId = searchParams.get('patientId')
+
     const appointments = await prisma.appointment.findMany({
+      where: {
+        ...(doctorId && { doctorId }),
+        ...(patientId && { patientId })
+      },
       include: {
         patient: true,
         doctor: true,

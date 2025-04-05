@@ -51,7 +51,7 @@ export default function FeaturesPage() {
               ))}
             </CardContent>
             <CardFooter className="justify-center">
-              <Link href="/patient" className="w-full">
+              <Link href="/dashboard" className="w-full">
                 <Button variant="default" className="w-full cursor-pointer">
                   Open Dashboard
                 </Button>

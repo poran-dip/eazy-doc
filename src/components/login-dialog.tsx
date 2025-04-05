@@ -110,7 +110,7 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
       }
 
       // Automatically log in after successful registration
-      const loginResponse = await fetch('/api/auth/login', {
+      const loginResponse = await fetch('/api/patients/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -130,6 +130,10 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
         return
       }
 
+      localStorage.setItem('patientId', data.patientId)
+      localStorage.setItem('isLoggedIn', 'true')
+      localStorage.setItem('role', 'patient')
+      
       // Redirect to dashboard
       onOpenChange(false)
       router.push('/dashboard')
@@ -168,7 +172,7 @@ export default function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
       }
 
       // Attempt login
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('/api/patients/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

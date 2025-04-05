@@ -388,13 +388,6 @@ const AdminDoctors: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* Doctors Dashboard Button */}
-      <Link href="/docs">
-        <Button className="fixed top-20 right-4 bg-blue-600 text-white text-lg hover:bg-blue-700">
-          Doctor Dashboard
-        </Button>
-      </Link>
-
       {/* Header and controls */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div className="flex items-center flex-1">
@@ -410,6 +403,12 @@ const AdminDoctors: React.FC = () => {
         <Button onClick={handleAddDoctor} className="flex items-center bg-green-600 hover:bg-green-700">
           <Plus className="mr-2 h-4 w-4" /> Add New Doctor
         </Button>
+
+        <Link href="/docs">
+          <Button className="bg-blue-600 text-white text-lg hover:bg-blue-700">
+            Doctor Dashboard
+          </Button>
+        </Link>
       </div>
 
       {/* Doctors Table */}
