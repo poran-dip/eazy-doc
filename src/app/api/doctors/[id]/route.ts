@@ -8,7 +8,8 @@ const DoctorUpdateSchema = z.object({
   image: z.string().optional(),
   specialization: z.string().optional(),
   status: z.enum(['AVAILABLE', 'ON_DUTY', 'OFF_DUTY', 'UNAVAILABLE']).optional(),
-  rating: z.number().optional()
+  rating: z.number().optional(),
+  location: z.string().optional()
 })
 
 export async function GET(

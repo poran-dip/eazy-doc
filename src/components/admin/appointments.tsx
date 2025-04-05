@@ -158,6 +158,13 @@ const AdminAppointments: React.FC = () => {
     }
   };
 
+  const getFilteredDoctors = () => {
+    if (!formSpecialization || formSpecialization === "" || formSpecialization === "none") {
+      return doctors;
+    }
+    return doctors.filter(doctor => doctor.specialization === formSpecialization);
+  };
+
   // Search and filter functionality
   useEffect(() => {
     let filtered = [...appointments];
@@ -551,6 +558,13 @@ const AdminAppointments: React.FC = () => {
                   value={formDoctorId} 
                   onValueChange={(value) => {
                     setFormDoctorId(value === "none" ? undefined : value);
+                    // Auto-fill specialization when a doctor is selected
+                    if (value !== "none") {
+                      const selectedDoctor = doctors.find(doc => doc.id === value);
+                      if (selectedDoctor) {
+                        setFormSpecialization(selectedDoctor.specialization);
+                      }
+                    }
                   }}
                 >
                   <SelectTrigger>
@@ -558,7 +572,7 @@ const AdminAppointments: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {doctors.map(doctor => (
+                    {getFilteredDoctors().map(doctor => (
                       <SelectItem key={doctor.id} value={doctor.id}>
                         {doctor.name} - {doctor.specialization}
                       </SelectItem>
@@ -635,7 +649,7 @@ const AdminAppointments: React.FC = () => {
             
             {/* Specialization */}
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="specialization" className="text-right">
+              <Label htmlFor="edit-specialization" className="text-right">
                 Specialization
               </Label>
               <div className="col-span-3">
@@ -643,6 +657,13 @@ const AdminAppointments: React.FC = () => {
                   value={formSpecialization} 
                   onValueChange={(value) => {
                     setFormSpecialization(value === "none" ? "" : value);
+                    // Clear doctor selection if the specialization changes
+                    if (formDoctorId) {
+                      const currentDoctor = doctors.find(doc => doc.id === formDoctorId);
+                      if (!currentDoctor || currentDoctor.specialization !== value) {
+                        setFormDoctorId(undefined);
+                      }
+                    }
                   }}
                 >
                   <SelectTrigger>
@@ -751,14 +772,23 @@ const AdminAppointments: React.FC = () => {
               <div className="col-span-3">
                 <Select 
                   value={formDoctorId} 
-                  onValueChange={setFormDoctorId}
+                  onValueChange={(value) => {
+                    setFormDoctorId(value === "none" ? undefined : value);
+                    // Auto-fill specialization when a doctor is selected
+                    if (value !== "none") {
+                      const selectedDoctor = doctors.find(doc => doc.id === value);
+                      if (selectedDoctor) {
+                        setFormSpecialization(selectedDoctor.specialization);
+                      }
+                    }
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select doctor (optional)" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {doctors.map(doctor => (
+                    {getFilteredDoctors().map(doctor => (
                       <SelectItem key={doctor.id} value={doctor.id}>
                         {doctor.name} - {doctor.specialization}
                       </SelectItem>
@@ -835,13 +865,22 @@ const AdminAppointments: React.FC = () => {
             
             {/* Specialization */}
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-specialization" className="text-right">
+              <Label htmlFor="specialization" className="text-right">
                 Specialization
               </Label>
               <div className="col-span-3">
                 <Select 
                   value={formSpecialization} 
-                  onValueChange={setFormSpecialization}
+                  onValueChange={(value) => {
+                    setFormSpecialization(value === "none" ? "" : value);
+                    // Clear doctor selection if the specialization changes
+                    if (formDoctorId) {
+                      const currentDoctor = doctors.find(doc => doc.id === formDoctorId);
+                      if (!currentDoctor || currentDoctor.specialization !== value) {
+                        setFormDoctorId(undefined);
+                      }
+                    }
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select specialization" />

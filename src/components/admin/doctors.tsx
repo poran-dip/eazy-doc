@@ -30,10 +30,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, Pencil, Trash2, Plus, Calendar, Upload } from 'lucide-react';
+import { Search, Pencil, Trash2, Plus, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client'
+import ProfileImageUploader from '@/components/ProfileImageUploader';
 
 // Define types based on Prisma schema
 interface Doctor {
@@ -73,8 +73,6 @@ interface Appointment {
 interface AppointmentViewProps {
   doctor: Doctor;
 }
-
-const supabase = createClient()
 
 // Appointment view component now uses doctor prop with pre-fetched appointments
 const AppointmentView: React.FC<AppointmentViewProps> = ({ doctor }) => {
@@ -152,7 +150,6 @@ const AdminDoctors: React.FC = () => {
   const [formSpecialization, setFormSpecialization] = useState('');
   const [formLocation, setFormLocation] = useState('');
   const [formImage, setFormImage] = useState('');
-  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Fetch doctors from API
   useEffect(() => {
@@ -201,42 +198,6 @@ const AdminDoctors: React.FC = () => {
         (doctor.location && doctor.location.toLowerCase().includes(term))
       );
       setFilteredDoctors(filtered);
-    }
-  };
-
-  // Image upload functionality
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadingImage(true);
-    try {
-      const fileExt = file.name.split('.').pop()
-      const filePath = `${Date.now()}.${fileExt}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars') // change if your bucket has a different name
-        .upload(filePath, file, {
-          upsert: true,
-          cacheControl: '3600',
-          contentType: file.type,
-        })
-
-      if (uploadError) throw uploadError
-
-      // get public URL
-      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath)
-      const imageUrl = data.publicUrl
-
-      setFormImage(imageUrl)
-      toast.success('image uploaded successfully')
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast.error("Error", {
-        description: "Failed to upload image. Please try again.",
-      });
-    } finally {
-      setUploadingImage(false);
     }
   };
 
@@ -615,36 +576,9 @@ const AdminDoctors: React.FC = () => {
                 Profile Image
               </Label>
               <div className="col-span-3">
-                <div className="flex items-center gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-[120px]"
-                    onClick={() => document.getElementById('image-upload')?.click()}
-                    disabled={uploadingImage}
-                  >
-                    {uploadingImage ? "Uploading..." : "Upload Image"}
-                    <Upload className="ml-2 h-4 w-4" />
-                  </Button>
-                  {formImage && (
-                    <span className="text-xs text-green-600">Image selected</span>
-                  )}
-                </div>
-                <input
-                  id="image-upload"
-                  type="file"
-                  accept="image/png,image/jpeg"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                {/* For demo purposes, let's allow direct URL input as well */}
-                <Input
-                  id="image-url"
-                  value={formImage}
-                  onChange={(e) => setFormImage(e.target.value)}
-                  placeholder="Or paste image URL here"
-                  className="mt-2"
+                <ProfileImageUploader
+                  currentImageUrl={formImage}
+                  onImageUploaded={(url) => setFormImage(url)}
                 />
               </div>
             </div>
@@ -744,52 +678,9 @@ const AdminDoctors: React.FC = () => {
                 Profile Image
               </Label>
               <div className="col-span-3">
-                {formImage && (
-                  <div className="mb-2">
-                    <img 
-                      src={formImage} 
-                      alt="Doctor profile" 
-                      className="w-16 h-16 object-cover rounded-full border"
-                    />
-                  </div>
-                )}
-                <div className="flex items-center gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-[120px]"
-                    onClick={() => document.getElementById('edit-image-upload')?.click()}
-                    disabled={uploadingImage}
-                  >
-                    {uploadingImage ? "Uploading..." : "Change Image"}
-                    <Upload className="ml-2 h-4 w-4" />
-                  </Button>
-                  {formImage && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-500"
-                      onClick={() => setFormImage('')}
-                    >
-                      Remove
-                    </Button>
-                  )}
-                </div>
-                <input
-                  id="edit-image-upload"
-                  type="file"
-                  accept="image/png,image/jpeg"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                <Input
-                  id="edit-image-url"
-                  value={formImage}
-                  onChange={(e) => setFormImage(e.target.value)}
-                  placeholder="Or paste image URL here"
-                  className="mt-2"
+                <ProfileImageUploader
+                  currentImageUrl={formImage}
+                  onImageUploaded={(url) => setFormImage(url)}
                 />
               </div>
             </div>

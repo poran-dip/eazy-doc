@@ -33,7 +33,6 @@ interface FeaturedDoctorsProps {
 export default function FeaturedDoctors({ doctors, isLoading, error }: FeaturedDoctorsProps) {
   const router = useRouter()
   
-  // Get the first 4 doctors to feature
   const featuredDoctors = doctors.slice(0, 4).map(doctor => ({
     id: doctor.id,
     name: doctor.name || 'Unnamed Doctor',
