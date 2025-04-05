@@ -30,9 +30,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, Pencil, Trash2, Plus, Calendar } from 'lucide-react';
+import { Search, Pencil, Trash2, Plus, Calendar, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client'
 
 // Define types based on Prisma schema
 interface Doctor {
@@ -42,6 +43,8 @@ interface Doctor {
   appointmentCount?: number;
   name: string;
   email: string;
+  image?: string | null;
+  location?: string | null;
 }
 
 interface DoctorRequest {
@@ -49,6 +52,8 @@ interface DoctorRequest {
   email: string;
   specialization: string;
   password?: string;
+  image?: string;
+  location?: string;
 }
 
 interface Appointment {
@@ -58,16 +63,18 @@ interface Appointment {
   status: 'NEW' | 'PENDING' | 'COMPLETED' | 'CANCELED';
   patient: {
     id: string;
-    name: string;
+    name: string | null;
     user: {
-      name: string;
-    }
+      name: string | null;
+    } | null;
   };
 }
 
 interface AppointmentViewProps {
   doctor: Doctor;
 }
+
+const supabase = createClient()
 
 // Appointment view component now uses doctor prop with pre-fetched appointments
 const AppointmentView: React.FC<AppointmentViewProps> = ({ doctor }) => {
@@ -96,7 +103,7 @@ const AppointmentView: React.FC<AppointmentViewProps> = ({ doctor }) => {
               {appointments.map((appointment) => (
                 <tr key={appointment.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {appointment.patient.user.name}
+                    {appointment.patient?.user?.name || appointment.patient?.name || 'Unknown'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {appointment.dateTime ? new Date(appointment.dateTime).toLocaleString() : 'Not scheduled'}
@@ -143,6 +150,9 @@ const AdminDoctors: React.FC = () => {
   const [formEmail, setFormEmail] = useState('');
   const [formPassword, setFormPassword] = useState('');
   const [formSpecialization, setFormSpecialization] = useState('');
+  const [formLocation, setFormLocation] = useState('');
+  const [formImage, setFormImage] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Fetch doctors from API
   useEffect(() => {
@@ -187,9 +197,46 @@ const AdminDoctors: React.FC = () => {
       const filtered = doctors.filter(doctor => 
         doctor.name.toLowerCase().includes(term) || 
         doctor.email.toLowerCase().includes(term) ||
-        doctor.specialization.toLowerCase().includes(term)
+        doctor.specialization.toLowerCase().includes(term) ||
+        (doctor.location && doctor.location.toLowerCase().includes(term))
       );
       setFilteredDoctors(filtered);
+    }
+  };
+
+  // Image upload functionality
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const fileExt = file.name.split('.').pop()
+      const filePath = `${Date.now()}.${fileExt}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars') // change if your bucket has a different name
+        .upload(filePath, file, {
+          upsert: true,
+          cacheControl: '3600',
+          contentType: file.type,
+        })
+
+      if (uploadError) throw uploadError
+
+      // get public URL
+      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath)
+      const imageUrl = data.publicUrl
+
+      setFormImage(imageUrl)
+      toast.success('image uploaded successfully')
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error("Error", {
+        description: "Failed to upload image. Please try again.",
+      });
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -200,6 +247,8 @@ const AdminDoctors: React.FC = () => {
     setFormEmail('');
     setFormPassword('');
     setFormSpecialization('');
+    setFormLocation('');
+    setFormImage('');
     setIsAddDialogOpen(true);
   };
 
@@ -214,22 +263,28 @@ const AdminDoctors: React.FC = () => {
 
     setIsSubmitting(true);
     try {
+      const doctorData: DoctorRequest = {
+        name: formName,
+        email: formEmail,
+        password: formPassword,
+        specialization: formSpecialization,
+      };
+
+      // Only add optional fields if they have values
+      if (formLocation) doctorData.location = formLocation;
+      if (formImage) doctorData.image = formImage;
+
       const response = await fetch('/api/doctors', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: formName,
-          email: formEmail,
-          password: formPassword,
-          specialization: formSpecialization,
-        }),
+        body: JSON.stringify(doctorData),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to add doctor');
+        throw new Error(error.error || 'Failed to add doctor');
       }
 
       await fetchDoctors();
@@ -254,6 +309,8 @@ const AdminDoctors: React.FC = () => {
     setFormEmail(doctor.email);
     setFormPassword(''); // Don't populate password for security
     setFormSpecialization(doctor.specialization);
+    setFormLocation(doctor.location || '');
+    setFormImage(doctor.image || '');
     setIsEditDialogOpen(true);
   };
 
@@ -272,6 +329,8 @@ const AdminDoctors: React.FC = () => {
         name: formName,
         email: formEmail,
         specialization: formSpecialization,
+        location: formLocation || undefined,
+        image: formImage || undefined,
       };
       
       // Only include password if it was changed
@@ -279,8 +338,9 @@ const AdminDoctors: React.FC = () => {
         requestBody.password = formPassword;
       }
 
+      // Changed from PATCH to PUT to match your API route
       const response = await fetch(`/api/doctors/${currentDoctor.id}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -289,7 +349,7 @@ const AdminDoctors: React.FC = () => {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to update doctor');
+        throw new Error(error.error || 'Failed to update doctor');
       }
 
       await fetchDoctors();
@@ -324,7 +384,7 @@ const AdminDoctors: React.FC = () => {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to delete doctor');
+        throw new Error(error.error || 'Failed to delete doctor');
       }
 
       await fetchDoctors();
@@ -343,9 +403,26 @@ const AdminDoctors: React.FC = () => {
   };
 
   // View appointments
-  const handleViewAppointments = (doctor: Doctor) => {
-    setCurrentDoctor(doctor);
-    setIsAppointmentDialogOpen(true);
+  const handleViewAppointments = async (doctor: Doctor) => {
+    setIsSubmitting(true);
+    try {
+      // Fetch detailed doctor info including appointments
+      const response = await fetch(`/api/doctors/${doctor.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch doctor appointments');
+      }
+      const doctorWithAppointments = await response.json();
+      
+      setCurrentDoctor(doctorWithAppointments);
+      setIsAppointmentDialogOpen(true);
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      toast.error("Error", {
+        description: "Failed to fetch doctor appointments",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -380,9 +457,11 @@ const AdminDoctors: React.FC = () => {
           <TableCaption>List of all registered doctors</TableCaption>
           <TableHeader>
             <TableRow>
+              <TableHead>Profile</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Specialization</TableHead>
+              <TableHead>Location</TableHead>
               <TableHead>Appointments</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -390,22 +469,40 @@ const AdminDoctors: React.FC = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-6">
+                <TableCell colSpan={7} className="text-center py-6">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : filteredDoctors.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-6 text-gray-500">
+                <TableCell colSpan={7} className="text-center py-6 text-gray-500">
                   No doctors found
                 </TableCell>
               </TableRow>
             ) : (
               filteredDoctors.map((doctor) => (
                 <TableRow key={doctor.id}>
+                  <TableCell>
+                    {doctor.image ? (
+                      <div className="w-10 h-10 rounded-full overflow-hidden">
+                        <img 
+                          src={doctor.image} 
+                          alt={`Dr. ${doctor.name}`} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                        <span className="text-gray-500 text-xs font-medium">
+                          {doctor.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell className="font-medium">{doctor.name}</TableCell>
                   <TableCell>{doctor.email}</TableCell>
                   <TableCell>{doctor.specialization}</TableCell>
+                  <TableCell>{doctor.location || '-'}</TableCell>
                   <TableCell>{doctor.appointmentCount || 0}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
@@ -453,7 +550,7 @@ const AdminDoctors: React.FC = () => {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">
-                Name&apos;s Field
+                Name
               </Label>
               <Input
                 id="name"
@@ -500,6 +597,57 @@ const AdminDoctors: React.FC = () => {
                 className="col-span-3"
               />
             </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="location" className="text-right">
+                Location
+              </Label>
+              <Input
+                id="location"
+                value={formLocation}
+                onChange={(e) => setFormLocation(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="image" className="text-right">
+                Profile Image
+              </Label>
+              <div className="col-span-3">
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-[120px]"
+                    onClick={() => document.getElementById('image-upload')?.click()}
+                    disabled={uploadingImage}
+                  >
+                    {uploadingImage ? "Uploading..." : "Upload Image"}
+                    <Upload className="ml-2 h-4 w-4" />
+                  </Button>
+                  {formImage && (
+                    <span className="text-xs text-green-600">Image selected</span>
+                  )}
+                </div>
+                <input
+                  id="image-upload"
+                  type="file"
+                  accept="image/png,image/jpeg"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                {/* For demo purposes, let's allow direct URL input as well */}
+                <Input
+                  id="image-url"
+                  value={formImage}
+                  onChange={(e) => setFormImage(e.target.value)}
+                  placeholder="Or paste image URL here"
+                  className="mt-2"
+                />
+              </div>
+            </div>
           </div>
           
           <DialogFooter className="sm:justify-end">
@@ -530,7 +678,7 @@ const AdminDoctors: React.FC = () => {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-name" className="text-right">
-                Name&apos;s Field
+                Name
               </Label>
               <Input
                 id="edit-name"
@@ -577,6 +725,73 @@ const AdminDoctors: React.FC = () => {
                 onChange={(e) => setFormSpecialization(e.target.value)}
                 className="col-span-3"
               />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-location" className="text-right">
+                Location
+              </Label>
+              <Input
+                id="edit-location"
+                value={formLocation}
+                onChange={(e) => setFormLocation(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-image" className="text-right">
+                Profile Image
+              </Label>
+              <div className="col-span-3">
+                {formImage && (
+                  <div className="mb-2">
+                    <img 
+                      src={formImage} 
+                      alt="Doctor profile" 
+                      className="w-16 h-16 object-cover rounded-full border"
+                    />
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-[120px]"
+                    onClick={() => document.getElementById('edit-image-upload')?.click()}
+                    disabled={uploadingImage}
+                  >
+                    {uploadingImage ? "Uploading..." : "Change Image"}
+                    <Upload className="ml-2 h-4 w-4" />
+                  </Button>
+                  {formImage && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-500"
+                      onClick={() => setFormImage('')}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
+                <input
+                  id="edit-image-upload"
+                  type="file"
+                  accept="image/png,image/jpeg"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <Input
+                  id="edit-image-url"
+                  value={formImage}
+                  onChange={(e) => setFormImage(e.target.value)}
+                  placeholder="Or paste image URL here"
+                  className="mt-2"
+                />
+              </div>
             </div>
           </div>
           
