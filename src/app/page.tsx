@@ -3,6 +3,7 @@ import DoctorSearch from "@/components/homepage/doctor-search"
 import FeaturedDoctors from "@/components/homepage/featured-doctors"
 import MedbotPromo from "@/components/homepage/medbot-promo"
 import Navbar from "@/components/navbar"
+import Disclaimer from "@/components/homepage/disclaimer"
 import { prisma } from "@/lib/prisma"
 import { Decimal } from "@prisma/client/runtime/library"
 
@@ -71,6 +72,9 @@ export default async function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <section className="bg-blue-50">
+        <Disclaimer />
+      </section>
       <main className="flex-1">
         <section className="py-16 md:py-20 bg-blue-50">
           <div className="container px-4 md:px-6 max-w-6xl mx-auto">
