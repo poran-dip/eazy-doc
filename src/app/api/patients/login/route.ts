@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!patient) {
-      return NextResponse.json({ message: 'Doctor not found' }, { status: 401 });
+      return NextResponse.json({ message: 'Patient not found' }, { status: 401 });
     }
 
     const isMatch = await bcrypt.compare(password, patient.password);
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       message: 'OK',
-      doctorId: patient.id,
+      patientId: patient.id,
       email: patient.email,
       role: 'patient'
     });

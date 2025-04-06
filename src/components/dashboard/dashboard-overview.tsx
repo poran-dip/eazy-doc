@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Calendar, ClipboardList, Clock, User } from "lucide-react"
 
@@ -7,30 +8,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-export default function DashboardOverview() {
-  // Mock data for upcoming appointments
-  const upcomingAppointments = [
-    {
-      id: 1,
-      doctor: "Dr. Sarah Johnson",
-      specialty: "Cardiology",
-      date: "May 15, 2024",
-      time: "10:30 AM",
-      status: "confirmed",
-      image: "/placeholder.svg?height=40&width=40",
-    },
-    {
-      id: 2,
-      doctor: "Dr. Michael Chen",
-      specialty: "Dermatology",
-      date: "May 22, 2024",
-      time: "2:15 PM",
-      status: "pending",
-      image: "/placeholder.svg?height=40&width=40",
-    },
-  ]
+interface Appointment {
+  id: string
+  doctor: {
+    id: string
+    name: string
+    specialization: string
+    image?: string
+  }
+  dateTime: string
+  status: string
+}
 
-  // Mock data for recent lab results
+export default function DashboardOverview() {
+  const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Mock data for recent lab results - keeping this as placeholder
   const recentLabResults = [
     {
       id: 1,
@@ -48,6 +43,67 @@ export default function DashboardOverview() {
     },
   ]
 
+  // Function to filter upcoming appointments
+  const filterUpcomingAppointments = (allAppointments: Appointment[]): Appointment[] => {
+    const now = new Date()
+    return allAppointments
+      .filter(appointment => {
+        const appointmentDate = new Date(appointment.dateTime)
+        return appointmentDate > now
+      })
+      .sort((a, b) => {
+        // Sort by date (earliest first)
+        return new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()
+      })
+  }
+
+  useEffect(() => {
+    async function fetchAppointments() {
+      try {
+        // Get patientId from localStorage
+        const patientId = localStorage.getItem('patientId')
+        
+        if (!patientId) {
+          setError("No patient ID found. Please log in again.")
+          setLoading(false)
+          return
+        }
+
+        // Fetch appointments from API
+        const response = await fetch(`/api/appointments?patientId=${patientId}`)
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching appointments: ${response.statusText}`)
+        }
+        
+        const data = await response.json()
+        
+        // Filter for upcoming appointments
+        const upcoming = filterUpcomingAppointments(data)
+        setUpcomingAppointments(upcoming)
+        
+        setLoading(false)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+        setLoading(false)
+      }
+    }
+
+    fetchAppointments()
+  }, [])
+
+  // Format date from ISO string
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+  }
+
+  // Format time from ISO string
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -62,8 +118,12 @@ export default function DashboardOverview() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{upcomingAppointments.length}</div>
-            <p className="text-xs text-muted-foreground">Next: {upcomingAppointments[0]?.date}</p>
+            <div className="text-2xl font-bold">{loading ? '...' : upcomingAppointments.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {loading ? 'Loading...' : 
+               error ? 'Error loading data' : 
+               upcomingAppointments.length > 0 ? `Next: ${formatDate(upcomingAppointments[0]?.dateTime)}` : 'No upcoming appointments'}
+            </p>
           </CardContent>
           <CardFooter>
             <Button variant="ghost" size="sm" asChild className="w-full">
@@ -135,51 +195,73 @@ export default function DashboardOverview() {
           <TabsTrigger value="lab-results">Recent Lab Results</TabsTrigger>
         </TabsList>
         <TabsContent value="appointments" className="space-y-4">
-          <div className="grid gap-4">
-            {upcomingAppointments.map((appointment) => (
-              <Card key={appointment.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <Avatar>
-                      <AvatarImage src={appointment.image} alt={appointment.doctor} />
-                      <AvatarFallback>
-                        {appointment.doctor
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 space-y-1">
-                      <p className="font-medium">{appointment.doctor}</p>
-                      <p className="text-sm text-muted-foreground">{appointment.specialty}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{appointment.date}</span>
+          {loading ? (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p>Loading appointments...</p>
+              </CardContent>
+            </Card>
+          ) : error ? (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-red-500">{error}</p>
+              </CardContent>
+            </Card>
+          ) : upcomingAppointments.length === 0 ? (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p>No upcoming appointments found.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {upcomingAppointments.map((appointment) => (
+                <Card key={appointment.id}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-4">
+                      <Avatar>
+                        <AvatarImage src={appointment.doctor.image || "/placeholder.svg?height=40&width=40"} alt={appointment.doctor.name} />
+                        <AvatarFallback>
+                          {appointment.doctor.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 space-y-1">
+                        <p className="font-medium">{appointment.doctor.name}</p>
+                        <p className="text-sm text-muted-foreground">{appointment.doctor.specialization}</p>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{appointment.time}</span>
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{formatDate(appointment.dateTime)}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{formatTime(appointment.dateTime)}</span>
+                        </div>
+                        <Badge
+                          variant={appointment.status === "COMPLETED" ? "outline" : 
+                                  appointment.status === "CANCELED" ? "destructive" : 
+                                  appointment.status === "EMERGENCY" ? "destructive" : "default"}
+                          className={appointment.status === "NEW" || appointment.status === "PENDING" ? "bg-green-500" : ""}
+                        >
+                          {appointment.status.charAt(0) + appointment.status.slice(1).toLowerCase()}
+                        </Badge>
                       </div>
-                      <Badge
-                        variant={appointment.status === "confirmed" ? "default" : "outline"}
-                        className={appointment.status === "confirmed" ? "bg-green-500" : ""}
-                      >
-                        {appointment.status === "confirmed" ? "Confirmed" : "Pending"}
-                      </Badge>
                     </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-between p-6 pt-0">
-                  <Button variant="outline" size="sm">
-                    Reschedule
-                  </Button>
-                  <Button size="sm">View Details</Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between p-6 pt-0">
+                    <Button variant="outline" size="sm">
+                      Reschedule
+                    </Button>
+                    <Button size="sm">View Details</Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
           <div className="flex justify-center">
             <Button variant="outline" asChild>
               <Link href="/dashboard/appointments">View All Appointments</Link>

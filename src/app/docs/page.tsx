@@ -13,7 +13,7 @@ function DoctorHomepage() {
   useEffect(() => {
     const id = localStorage.getItem("doctorId");
     if (!id) {
-      router.push("/doc/login");
+      router.push("/docs/login");
     } else {
       setDoctorId(id);
     }

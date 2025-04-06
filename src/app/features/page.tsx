@@ -4,6 +4,9 @@ import Navbar from '@/components/navbar';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
+import PatientLoginButton from '@/components/demo/patient-login-button';
+import DoctorLoginButton from '@/components/demo/doctor-login-button';
+import AdminLoginButton from '@/components/demo/admin-login-button';
 
 export default function FeaturesPage() {
   const patientFeatures = [
@@ -49,6 +52,12 @@ export default function FeaturesPage() {
                   <span>{feature}</span>
                 </div>
               ))}
+              <div className="mt-4 p-3 bg-gray-100 rounded-md">
+                <p className="text-sm font-medium">Test Credentials:</p>
+                <p className="text-sm">Email: myra@gmail.com</p>
+                <p className="text-sm mb-2">Password: myrakapoor</p>
+                <PatientLoginButton />
+              </div>
             </CardContent>
             <CardFooter className="justify-center">
               <Link href="/dashboard" className="w-full">
@@ -70,6 +79,12 @@ export default function FeaturesPage() {
                   <span>{feature}</span>
                 </div>
               ))}
+              <div className="mt-4 p-3 bg-gray-100 rounded-md">
+                <p className="text-sm font-medium">Test Credentials:</p>
+                <p className="text-sm">Email: sosangkar@gmail.com</p>
+                <p className="text-sm mb-2">Password: sosangkar</p>
+                <DoctorLoginButton />
+              </div>
             </CardContent>
             <CardFooter className="justify-center">
               <Link href="/docs" className="w-full">
@@ -91,6 +106,12 @@ export default function FeaturesPage() {
                   <span>{feature}</span>
                 </div>
               ))}
+              <div className="mt-4 p-3 bg-gray-100 rounded-md">
+                <p className="text-sm font-medium">Test Credentials:</p>
+                <p className="text-sm">Email: porandip@gmail.com</p>
+                <p className="text-sm mb-2">Password: Password@1</p>
+                <AdminLoginButton />
+              </div>
             </CardContent>
             <CardFooter className="justify-center">
               <Link href="/admin" className="w-full">
