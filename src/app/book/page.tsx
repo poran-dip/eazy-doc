@@ -174,7 +174,7 @@ export default function PatientAppointmentRegistrationPage() {
           specialization: formData.specialization,
           condition: formData.condition,
           description: formData.description,
-          appointmentDateTime: appointmentDateTime?.toISOString(),
+          dateTime: appointmentDateTime?.toISOString(),
           status: 'NEW'
         })
       })
