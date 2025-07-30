@@ -23,7 +23,7 @@ interface TechStack {
 export default function AboutUsPage() {
   const teamMembers: TeamMember[] = [
     {
-      name: 'Dikshayn Chakroborty',
+      name: 'Dikshyan Chakroborty',
       role: 'AI & Frontend Dev',
       college: 'Assam Down Town University',
       contact: '#',
@@ -43,7 +43,7 @@ export default function AboutUsPage() {
       bio: 'Backend maestro who makes servers sing and databases dance. Solving complex problems with elegant solutions.'
     },
     {
-      name: 'Rajdeep Choudhory',
+      name: 'Rajdeep Choudhury',
       role: 'Presentation & Project Coordination',
       college: 'Amity University',
       contact: '#',
